@@ -24,8 +24,9 @@ from .transforms import (AffineResize, BackgroundPointsFilter, GlobalAlignment,
                          RandomShiftScale, Resize3D, VoxelBasedPointSampler)
 from .utils import get_loading_pipeline
 from .waymo_dataset import WaymoDataset
-
+from .zod_dataset import ZodDataset
 __all__ = [
+    'ZodDataset',
     'KittiDataset', 'CBGSDataset', 'NuScenesDataset', 'LyftDataset',
     'ObjectSample', 'RandomFlip3D', 'ObjectNoise', 'GlobalRotScaleTrans',
     'PointShuffle', 'ObjectRangeFilter', 'PointsRangeFilter',

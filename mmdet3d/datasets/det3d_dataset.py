@@ -104,6 +104,7 @@ class Det3DDataset(BaseDataset):
         if metainfo is not None and 'classes' in metainfo:
             # we allow to train on subset of self.METAINFO['classes']
             # map unselected labels to -1
+            print(f"METAINFO is {self.METAINFO}")
             self.label_mapping = {
                 i: -1
                 for i in range(len(self.METAINFO['classes']))
@@ -253,11 +254,11 @@ class Det3DDataset(BaseDataset):
 
                 ann_info[mapped_ann_name] = temp_anns
             ann_info['instances'] = info['instances']
-
+            
             for label in ann_info['gt_labels_3d']:
                 if label != -1:
                     self.num_ins_per_cat[label] += 1
-
+            
         return ann_info
 
     def parse_data_info(self, info: dict) -> dict:
