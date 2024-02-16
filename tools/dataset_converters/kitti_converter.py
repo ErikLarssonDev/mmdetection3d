@@ -155,7 +155,6 @@ def _calculate_num_points_in_gt(data_path,
             [num_points_in_gt, -np.ones([num_ignored])])
         annos['num_points_in_gt'] = num_points_in_gt.astype(np.int32)
 
-
 def create_kitti_info_file(data_path,
                            pkl_prefix='kitti',
                            with_plane=False,

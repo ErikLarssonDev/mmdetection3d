@@ -11,6 +11,7 @@ from .scannet_dataset import (ScanNetDataset, ScanNetInstanceSegDataset,
 from .seg3d_dataset import Seg3DDataset
 from .semantickitti_dataset import SemanticKittiDataset
 from .sunrgbd_dataset import SUNRGBDDataset
+from .restructured_zod_dataset import ZodDatasetRestruct
 # yapf: disable
 from .transforms import (AffineResize, BackgroundPointsFilter, GlobalAlignment,
                          GlobalRotScaleTrans, IndoorPatchPointSample,
@@ -26,7 +27,7 @@ from .utils import get_loading_pipeline
 from .waymo_dataset import WaymoDataset
 from .zod_dataset import ZodDataset
 __all__ = [
-    'ZodDataset',
+    'ZodDataset', 'ZodDatasetRestruct'
     'KittiDataset', 'CBGSDataset', 'NuScenesDataset', 'LyftDataset',
     'ObjectSample', 'RandomFlip3D', 'ObjectNoise', 'GlobalRotScaleTrans',
     'PointShuffle', 'ObjectRangeFilter', 'PointsRangeFilter',

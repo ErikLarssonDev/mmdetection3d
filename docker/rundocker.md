@@ -13,3 +13,8 @@ once inside the container run
 # mim install "mmengine" "mmcv>=2.0.0rc4" "mmdet>=3.0.0"
 pip3 install --no-cache-dir -e .
 ```
+
+# create dataset infos
+```shell
+PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/create_data.py custom --root-path ./minizod/minizod_mmdet3d --out-dir ./minizod/minizod_mmdet3d/ --extra-tag minizod
+```
