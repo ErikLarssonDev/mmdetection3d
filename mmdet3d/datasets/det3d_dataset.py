@@ -208,7 +208,6 @@ class Det3DDataset(BaseDataset):
 
         Args:
             info (dict): Info dict.
-
         Returns:
             dict or None: Processed `ann_info`.
         """
