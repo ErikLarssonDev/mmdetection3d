@@ -1,8 +1,8 @@
 # dataset settings
 dataset_type = 'ZodDatasetRestruct'
-data_root = 'minizod/minizod_mmdet3d'
+data_root = 'minizod/'
 class_names = ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear']  # replace with your dataset class
-point_cloud_range = [0, -40, -3, 70.4, 40, 1]  # adjust according to your dataset
+point_cloud_range = [-0, -25, -5, 100, 25, 3]  # adjust according to your dataset
 input_modality = dict(use_lidar=True, use_camera=False)
 metainfo = dict(classes=class_names)
 
@@ -10,8 +10,8 @@ train_pipeline = [
     dict(
         type='LoadPointsFromFile',
         coord_type='LIDAR',
-        load_dim=3,  # replace with your point cloud data dimension # TODO Replace with 4 dim when data can be rewritten
-        use_dim=3),  # replace with the actual dimension used in training and inference
+        load_dim=4,  # replace with your point cloud data dimension # TODO Replace with 4 dim when data can be rewritten
+        use_dim=4),  # replace with the actual dimension used in training and inference
     dict(
         type='LoadAnnotations3D',
         with_bbox_3d=True,
@@ -38,8 +38,8 @@ test_pipeline = [
     dict(
         type='LoadPointsFromFile',
         coord_type='LIDAR',
-        load_dim=3,  # replace with your point cloud data dimension
-        use_dim=3),
+        load_dim=4,  # replace with your point cloud data dimension
+        use_dim=4),
     dict(type='Pack3DDetInputs', keys=['points'])
 ]
 # construct a pipeline for data and gt loading in show function
@@ -49,7 +49,7 @@ eval_pipeline = [
 ]
 train_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=1,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
@@ -82,6 +82,6 @@ val_dataloader = dict(
         metainfo=metainfo,
         box_type_3d='LiDAR'))
 val_evaluator = dict(
-    type='KittiMetric',
-    ann_file=data_root + 'custom_infos_val.pkl',  # specify your validation pkl info
+    type='KittiMetric',# TODO: Change to ZOD
+    ann_file=data_root + 'minizod_infos_val.pkl',  # specify your validation pkl info
     metric='bbox')

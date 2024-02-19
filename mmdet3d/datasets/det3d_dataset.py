@@ -104,7 +104,6 @@ class Det3DDataset(BaseDataset):
         if metainfo is not None and 'classes' in metainfo:
             # we allow to train on subset of self.METAINFO['classes']
             # map unselected labels to -1
-            print(f"METAINFO is {self.METAINFO}")
             self.label_mapping = {
                 i: -1
                 for i in range(len(self.METAINFO['classes']))

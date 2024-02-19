@@ -48,7 +48,7 @@ def get_zod_image_info(path,
 
     def map_func(idx):
         info = {}
-        pc_info = {'num_features': 3}
+        pc_info = {'num_features': 4}
         annotations = None
         pc_info['velodyne_path'] = os.path.join(path, 'points', f'{idx}.bin')
         if label_info:
@@ -70,7 +70,7 @@ def _calculate_num_points_in_gt(data_path,
                                 infos,
                                 relative_path,
                                 remove_outside=True,
-                                num_features=3):
+                                num_features=4):
     for info in mmengine.track_iter_progress(infos):
         pc_info = info['point_cloud']
         if relative_path:
