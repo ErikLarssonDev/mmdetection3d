@@ -1,6 +1,8 @@
-voxel_size = [1, 1, 8]
-pcr_range = [-0, -25, -5, 100, 25, 3]
+voxel_size = [0.25, 0.25, 8]
+pcr_range = [-0, -25, -5, 250, 25, 3]
+
 model = dict(
+    # with_cp = True, #Tip to reduce GPU memory
     type='MVXFasterRCNN',
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
@@ -16,6 +18,7 @@ model = dict(
         in_channels=4,
         feat_channels=[64], 
         point_cloud_range=pcr_range,
+
         with_distance=False,
         voxel_size=voxel_size,
         with_cluster_center=True,
@@ -32,6 +35,7 @@ model = dict(
         layer_nums=[3, 5, 5],
         layer_strides=[2, 2, 2],
         out_channels=[64, 128, 256]),
+
 
     pts_neck=dict(
         type='mmdet.FPN',
@@ -52,12 +56,17 @@ model = dict(
             ranges=[pcr_range], custom_values=[],
             scales=[1, 2, 4],
             sizes=[
-                [2.5981, 0.8660, 1.],  # 1.5 / sqrt(3)
-                [1.7321, 0.5774, 1.],  # 1 / sqrt(3)
-                [1., 1., 1.],
-                [0.4, 0.4, 1],
+                [2.5981,    0.8660, 1.],  # 1.5 / sqrt(3)
+                [1.7321,    0.5774, 1.],  # 1 / sqrt(3)
+                [1.,        1.,     1.],
+                [0.4,       0.4,    1],
+                [4.016,     1.693,  1.563],
+                [1.072,     0.414,  1.222],
+                [0.1,       0.4,    0.436],
+                [0.075,     0.074,  0.484],
+                [0.1,       0.253,  0.435],
             ],
-            rotations=[0, 1.57],
+            rotations=[-1.57, 0, 1.57],
             reshape_out=True),
         assigner_per_size=False,
         diff_rad_by_sin=True,
@@ -85,22 +94,31 @@ model = dict(
                 pos_iou_thr=0.6,
                 neg_iou_thr=0.3,
                 min_pos_iou=0.3,
-                ignore_iof_thr=-1),
+                ignore_iof_thr=-1,
+                gpu_assign_thr=-1), # memory reduce tip, should be as high as GPU can handle -1 is infinite
             allowed_border=0,
-            code_weight=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], #pcr_range
+            # code_weight=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], #pcr_range
             pos_weight=-1,
             debug=False)
     ),
     test_cfg=dict(
         pts=dict(
-            use_rotate_nms=True,
+            use_rotate_nms=True, # use_rotate_nms=True, # TODO add this after testing is done
             nms_across_levels=False,
             nms_pre=1000,
-            nms_thr=0.2,
-            score_thr=0.05,
+            nms_thr = 0.2, # nms_thr=0.2,
+            score_thr = 0.05, # score_thr=0.05,
             min_bbox_size=0,
             max_num=500
-        )
+        ),
+        assigner=dict(
+            type='Max3DIoUAssigner',
+            iou_calculator=dict(type='BboxOverlapsNearest3D'),
+            pos_iou_thr=0.6,
+            neg_iou_thr=0.3,
+            min_pos_iou=0.3,
+            ignore_iof_thr=-1,
+            gpu_assign_thr=-1),
     ),
     # model training settings (based on nuScenes model settings)
     # train_cfg=dict(pts=dict(code_weight=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]))

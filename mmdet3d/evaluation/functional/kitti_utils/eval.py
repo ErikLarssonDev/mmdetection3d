@@ -678,8 +678,8 @@ def kitti_eval(gt_annos,
     assert len(eval_types) > 0, 'must contain at least one evaluation type'
     if 'aos' in eval_types:
         assert 'bbox' in eval_types, 'must evaluate bbox when evaluating aos'
-    overlap_0_7 = np.array([[0.7, 0.5, 0.5, 0.7,
-                             0.5], [0.7, 0.5, 0.5, 0.7, 0.5],
+    overlap_0_7 = np.array([[0.7, 0.5, 0.5, 0.7, 0.5],
+                            [0.7, 0.5, 0.5, 0.7, 0.5],
                             [0.7, 0.5, 0.5, 0.7, 0.5]])
     overlap_0_5 = np.array([[0.7, 0.5, 0.5, 0.7, 0.5],
                             [0.5, 0.25, 0.25, 0.5, 0.25],

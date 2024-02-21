@@ -5,13 +5,16 @@ from mmdet3d.structures.bbox_3d.lidar_box3d import LiDARInstance3DBoxes
 from .det3d_dataset import Det3DDataset
 import numpy as np
 
+
+
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     # replace with all the classes in customized pkl info file
     METAINFO = {
-        'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear']
+        'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
+        'object_range': [0.0, -25.0, -5.0, 250.0, 25.0, 3.0]
     }
 
     def parse_ann_info(self, info):
@@ -29,6 +32,7 @@ class ZodDatasetRestruct(Det3DDataset):
         """
         ann_info = super().parse_ann_info(info)
         if ann_info is None:
+            print("WARNING: Got empty instance from parse_ann_info")
             ann_info = dict()
             # empty instance
             ann_info['gt_bboxes_3d'] = np.zeros((0, 7), dtype=np.float32)
@@ -36,6 +40,26 @@ class ZodDatasetRestruct(Det3DDataset):
 
         # filter the gt classes not used in training
         ann_info = self._remove_dontcare(ann_info)
+        ann_info = self.filter_annotations_on_range(ann_info)
         gt_bboxes_3d = LiDARInstance3DBoxes(ann_info['gt_bboxes_3d'])
+        print(f'GT labels in zod dataset {ann_info["gt_labels_3d"]}')
+
         ann_info['gt_bboxes_3d'] = gt_bboxes_3d
         return ann_info
+    
+    def filter_annotations_on_range(self, ann_info):
+        # Remove all object annotations that have center point outside of self.METAINFO.object_range
+        filtered_annotations = {}
+        filter_mask = np.all([ann_info['gt_bboxes_3d'][:,0] > self.METAINFO["object_range"][0], 
+                        ann_info['gt_bboxes_3d'][:,0] < self.METAINFO["object_range"][3],
+                        ann_info['gt_bboxes_3d'][:,1] > self.METAINFO["object_range"][1],
+                        ann_info['gt_bboxes_3d'][:,1] < self.METAINFO["object_range"][4],
+                        ann_info['gt_bboxes_3d'][:,2] > self.METAINFO["object_range"][2],
+                        ann_info['gt_bboxes_3d'][:,2] < self.METAINFO["object_range"][5]], axis=0)
+        for key in ann_info.keys():
+            if key != 'instances':
+                filtered_annotations[key] = (ann_info[key][filter_mask])
+            else:
+                filtered_annotations[key] = ann_info[key]
+        return filtered_annotations
+        
