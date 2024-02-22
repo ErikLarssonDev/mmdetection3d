@@ -1,5 +1,5 @@
 voxel_size = [0.25, 0.25, 8]
-pcr_range = [-0, -25, -5, 250, 25, 3]
+pcr_range = [-25, 0, -5, 25, 20, 3]
 
 model = dict(
     # with_cp = True, #Tip to reduce GPU memory
@@ -66,7 +66,7 @@ model = dict(
                 [0.075,     0.074,  0.484],
                 [0.1,       0.253,  0.435],
             ],
-            rotations=[-1.57, 0, 1.57],
+            rotations=[0, 1.57],
             reshape_out=True),
         assigner_per_size=False,
         diff_rad_by_sin=True,
@@ -118,7 +118,7 @@ model = dict(
             neg_iou_thr=0.3,
             min_pos_iou=0.3,
             ignore_iof_thr=-1,
-            gpu_assign_thr=-1),
+            gpu_assign_thr=0),
     ),
     # model training settings (based on nuScenes model settings)
     # train_cfg=dict(pts=dict(code_weight=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]))

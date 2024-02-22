@@ -146,6 +146,7 @@ def main():
             vis_task=vis_task)
 
         progress_bar.update()
+        
 
 
 if __name__ == '__main__':

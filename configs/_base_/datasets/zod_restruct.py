@@ -1,8 +1,8 @@
 # dataset settings
 dataset_type = 'ZodDatasetRestruct'
-data_root = 'minizod/minzod_mmdet3d/'
+data_root = 'minizod/' # minzod_mmdet3d/'
 class_names = ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear']  # replace with your dataset class
-point_cloud_range = [-0, -25, -5, 250, 25, 3]  # adjust according to your dataset
+point_cloud_range = [-25, 0, -5, 25, 20, 3]  # adjust according to your dataset
 input_modality = dict(use_lidar=True, use_camera=False)
 metainfo = dict(classes=class_names)
 
@@ -11,11 +11,12 @@ train_pipeline = [
         type='LoadPointsFromFile',
         coord_type='LIDAR',
         load_dim=4,  # replace with your point cloud data dimension # TODO Replace with 4 dim when data can be rewritten
-        use_dim=4),  # replace with the actual dimension used in training and inference
+        use_dim=[1,0,2,3]),  # replace with the actual dimension used in training and inference
     dict(
         type='LoadAnnotations3D',
         with_bbox_3d=True,
-        with_label_3d=True),
+        with_label_3d=True,
+        ),
     # dict(
     #     type='ObjectNoise',
     #     num_try=100,
