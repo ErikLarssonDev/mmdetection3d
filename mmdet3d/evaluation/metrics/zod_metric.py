@@ -101,15 +101,36 @@ class ZodMetric(BaseMetric):
         """
         logger: MMLogger = MMLogger.get_current_instance()
         self.classes = self.dataset_meta['classes']
-        print(len(results))
-        print(f"CLASSES IN COMPUTE METRICS {self.classes}")
-        print(f"PREDS ARE {results[0]['pred_instances_3d']}")
-        eval_class(
-            dt_annos=results[0]["pred_instances_3d"],
-            gt_annos=results[0]["gt_instances_3d"],
-            classes=self.classes)
-        raise NotImplementedError
-        return dict({})
+        min_overlaps = [0.1, 0.3, 0.5, 0.7, 0.9]
+        total_tps = np.zeros([len(self.classes), len(min_overlaps)])
+        total_fps = np.zeros([len(self.classes), len(min_overlaps)])
+        total_fns = np.zeros([len(self.classes), len(min_overlaps)])
+        total_gts = 0
+        total_preds = 0
+        for image in results:
+            tps, fps, fns, num_gts, num_preds = eval_image(
+                dt_annos=image["pred_instances_3d"],
+                gt_annos=image["gt_instances_3d"],
+                classes=self.classes,
+                min_overlaps=min_overlaps)
+            total_tps += tps
+            total_fps += fps
+            total_fns += fns
+            total_gts += num_gts
+            total_preds += num_preds
+        
+        precision = total_tps / (total_tps + total_fps + 1e-6) # 1e-6 to avoid division by zero
+        recall = total_tps / (total_tps + total_fns + 1e-6) # 1e-6 to avoid division by zero
+        accuracy = total_tps / (total_gts + 1e-6) # TODO check if this is correct
+        ap = np.mean(precision, axis=1)
+        map = np.mean(ap)
+        return dict(
+            precision=precision,
+            recall=recall,
+            accuracy=accuracy,
+            ap=ap,
+            map=map
+        )
     
 
     def process(self, data_batch, data_samples: Sequence[dict]) -> None:
@@ -123,29 +144,28 @@ class ZodMetric(BaseMetric):
                 the model.
         """
         gt_batch = data_batch["data_samples"]
-
         for pred_sample, gt_frame in zip(data_samples, gt_batch):
-            gt_annotation = gt_frame.eval_ann_info
+            gt_annotation = gt_frame.gt_instances_3d # .eval_ann_info
             result = dict()
-            pred_3d = pred_sample['pred_instances_3d']
-            gt_3d = dict(
-                labels_3d = gt_annotation["gt_bboxes_labels"],
-                bboxes_3d = gt_annotation["gt_bboxes_3d"]
-            )
-            for attr_name in pred_3d:
-                pred_3d[attr_name] = pred_3d[attr_name].to('cpu')
-            result['pred_instances_3d'] = pred_3d
-            result['gt_instances_3d'] = gt_3d
+            # pred_3d = pred_sample['pred_instances_3d']
+            # print(gt_annotation)
+            # gt_3d = dict(
+            #     labels_3d = gt_annotation.labels_3d, #["gt_bboxes_labels"]
+            #     bboxes_3d = gt_annotation.bboxes_3d #["gt_bboxes_3d"]
+            # )
+            # for attr_name in pred_3d:
+            #     pred_3d[attr_name] = pred_3d[attr_name].to('cpu')
+            result['pred_instances_3d'] = pred_sample['pred_instances_3d']
+            result['gt_instances_3d'] = gt_annotation
             self.results.append(result)
             
         return
     
 
-def eval_class(gt_annos,
+def eval_image(gt_annos,
             dt_annos,
             classes,
-            min_overlaps = None,
-            num_parts=200):
+            min_overlaps):
     """
     dt_annos:
         labels_3d
@@ -157,33 +177,24 @@ def eval_class(gt_annos,
     classes: A list of str in order
     """
     # assert len(gt_annos) == len(dt_annos)
-    if min_overlaps is None:
-        min_overlaps = [0.25, 0.5, 0.7]
-    dt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in dt_annos['bboxes_3d']])
-    gt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in gt_annos['bboxes_3d']])
+    dt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in dt_annos['bboxes_3d'].cpu()])
+    gt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in gt_annos['bboxes_3d'].cpu()])
     dt_labels = np.hstack([annot for annot in dt_annos['labels_3d']])
     dt_scores = np.hstack([annot for annot in dt_annos['scores_3d']])
     gt_labels = np.hstack([annot for annot in gt_annos['labels_3d']])
-    print(f"GT_LABELS ARE {gt_labels}")
-    print(f"GT BOXES ARE {gt_boxes}")
     overlaps, num_preds, num_gts = calculate_iou_partly(dt_boxes, gt_boxes)
-    print(np.max(overlaps))
-    best_fit = np.where(overlaps==np.max(overlaps))
-    print(best_fit)
-    print(f"gt: {gt_boxes[best_fit[1]]} {gt_labels[best_fit[1]]}")
-    print(f"pd: {dt_boxes[best_fit[0]]} {dt_labels[best_fit[0]]}")
-    print(f"Overlaps {overlaps}")
     num_minoverlap = len(min_overlaps)
-    N_SAMPLE_PTS = 41
     num_class = len(classes)
 
-    precision = np.zeros(
-        [num_class, num_minoverlap, N_SAMPLE_PTS])
-    recall = np.zeros(
-        [num_class, N_SAMPLE_PTS])
-    aos = np.zeros([num_class, num_minoverlap, N_SAMPLE_PTS])
+    tps = np.zeros(
+        [num_class, num_minoverlap])
+    fps = np.zeros(
+        [num_class, num_minoverlap])
+    fns = np.zeros(
+        [num_class, num_minoverlap])
+    
     for class_index, current_class in enumerate(classes):
-        for k, min_overlap in enumerate(min_overlaps):
+        for overlaps_index, min_overlap in enumerate(min_overlaps):
             thresholdss = []
             rets = compute_statistics_jit(
                 overlaps,
@@ -196,10 +207,12 @@ def eval_class(gt_annos,
                 min_overlap=min_overlap,
                 thresh=0.0,
                 compute_fp=True)
-            
+              
             tp, fp, fn, similarity, thresholds = rets
-            print(f"{current_class}, IoU >= {min_overlap}")
-            print(f"tp {tp}", f"fp {fp}", f"fn {fn}", f"similarity {similarity}", f"thresholds {thresholds}", sep="\n")
+            tps[class_index, overlaps_index] = tp
+            fps[class_index, overlaps_index] = fp
+            fns[class_index, overlaps_index] = fn
+    return tps, fps, fns, num_gts, num_preds
 
 def calculate_iou_partly(dt_boxes, gt_boxes):
 
@@ -210,9 +223,6 @@ def calculate_iou_partly(dt_boxes, gt_boxes):
     # parted_overlaps = []
     example_idx = 0
 
-
-    print(dt_boxes.shape)
-    print(gt_boxes.shape)
     
     overlaps = d3_box_overlap(dt_boxes,
                                 gt_boxes).astype(np.float64)
