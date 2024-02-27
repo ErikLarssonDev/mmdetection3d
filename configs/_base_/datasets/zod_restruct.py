@@ -1,8 +1,8 @@
 # dataset settings
 dataset_type = 'ZodDatasetRestruct'
-data_root = 'minizod/' # minzod_mmdet3d/'
+data_root = 'minizod/minzod_mmdet3d/' # 'minizod/' #
 class_names = ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear']  # replace with your dataset class
-point_cloud_range = [-25, 0, -5, 25, 20, 3]  # adjust according to your dataset
+point_cloud_range = [-25, 0, -5, 25, 245, 3]  # adjust according to your dataset
 input_modality = dict(use_lidar=True, use_camera=False)
 metainfo = dict(classes=class_names)
 
@@ -11,7 +11,7 @@ train_pipeline = [
         type='LoadPointsFromFile',
         coord_type='LIDAR',
         load_dim=4,  # replace with your point cloud data dimension # TODO Replace with 4 dim when data can be rewritten
-        use_dim=[1,0,2,3]),  # replace with the actual dimension used in training and inference
+        use_dim=4),  # replace with the actual dimension used in training and inference
     dict(
         type='LoadAnnotations3D',
         with_bbox_3d=True,
@@ -41,18 +41,18 @@ test_pipeline = [
         coord_type='LIDAR',
         load_dim=4,  # replace with your point cloud data dimension
         use_dim=4),
-    # dict( type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
+    dict( type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
-    # dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
-    dict(type='Pack3DDetInputs', keys=['points']),
+    dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
+    dict(type='Pack3DDetInputs', keys=['points', 'gt_bboxes_3d', 'gt_labels_3d']),
 ]
 # construct a pipeline for data and gt loading in show function
 eval_pipeline = [
     dict(type='LoadPointsFromFile', coord_type='LIDAR', load_dim=4, use_dim=4),
-    # dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
+    dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
-    # dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
-    dict(type='Pack3DDetInputs', keys=['points']),
+    dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
+    dict(type='Pack3DDetInputs', keys=['points', 'gt_bboxes_3d', 'gt_labels_3d']),
 ]
 train_dataloader = dict(
     batch_size=1,
@@ -61,7 +61,7 @@ train_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type='RepeatDataset',
-        times=100,
+        times=10,
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
@@ -85,7 +85,7 @@ val_dataloader = dict(
         ann_file='minizod_infos_train.pkl',  # specify your validation pkl info TODO: Change to val
         pipeline=test_pipeline,
         modality=input_modality,
-        test_mode=True,
+        test_mode=False,
         metainfo=metainfo,
         box_type_3d='LiDAR'))
 val_evaluator = dict(
@@ -107,7 +107,7 @@ test_dataloader = dict(
         ann_file='minizod_infos_train.pkl',  # specify your validation pkl info TODO: Change to val
         pipeline=test_pipeline,
         modality=input_modality,
-        test_mode=True,
+        test_mode=False,
         metainfo=metainfo,
         box_type_3d='LiDAR'))
 test_evaluator = dict(

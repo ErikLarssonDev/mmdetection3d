@@ -1,5 +1,7 @@
-voxel_size = [0.25, 0.25, 8]
-pcr_range = [-25, 0, -5, 25, 20, 3]
+# from math import ceil
+# [tensor(25.0000), tensor(242.1388), tensor(3.0000)] [tensor(-24.9999), tensor(6.2734e-05), tensor(-4.9970)]
+voxel_size = [0.0075, 0.0075, 8] # Originally 0.25, 0.25, 8 # This might be Z, X, Y
+pcr_range = [-25, 0, -5, 25, 245, 3] 
 
 model = dict(
     # with_cp = True, #Tip to reduce GPU memory
@@ -9,7 +11,7 @@ model = dict(
         voxel=True,
         voxel_layer=dict(
             voxel_size=voxel_size,
-            max_num_points=20,      
+            max_num_points=32,      
             point_cloud_range=pcr_range,
             max_voxels=(60000, 60000))),
 
@@ -26,7 +28,12 @@ model = dict(
         norm_cfg=dict(type='naiveSyncBN1d', eps=1e-3, momentum=0.01)),
 
     pts_middle_encoder=dict(
-        type='PointPillarsScatter', in_channels=64, output_shape=[800, 800]),
+        type='PointPillarsScatter', in_channels=64, 
+        output_shape=[
+            int((pcr_range[4]-pcr_range[1])/voxel_size[0] + 1), # Y-range / x-size??! # Originally 800
+            int((pcr_range[3]-pcr_range[0])/voxel_size[2] + 1)  # X-range / Z-size??! # Originally 800
+            ] 
+    ),
 
     pts_backbone=dict(
         type='SECOND',
@@ -51,20 +58,36 @@ model = dict(
         in_channels=256,
         feat_channels=256,
         use_direction_classifier=True,
+        assign_per_class=True,
         anchor_generator=dict(
             type='AlignedAnchor3DRangeGenerator',
-            ranges=[pcr_range], custom_values=[],
+            ranges=[
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, 0, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -0.1, 25, 250, 0.1],
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 0],
+            ], 
+            custom_values=[],
             scales=[1, 2, 4],
-            sizes=[
-                [2.5981,    0.8660, 1.],  # 1.5 / sqrt(3)
-                [1.7321,    0.5774, 1.],  # 1 / sqrt(3)
-                [1.,        1.,     1.],
-                [0.4,       0.4,    1],
-                [4.016,     1.693,  1.563],
-                [1.072,     0.414,  1.222],
-                [0.1,       0.4,    0.436],
-                [0.075,     0.074,  0.484],
-                [0.1,       0.253,  0.435],
+            sizes=[ # length, width, height
+                [4.01,  1.86,   1.53], # Vehicle
+                [1.7,   0.5,    1.2],  # VulnerableVehicle
+                [0.63,  0.63,   1.68], # Pedestrian
+                [.1,    .1,       .1],   # Animal
+                [0.19,  0.19,   5.14], # PoleObject
+                [.1,    .1,       .1],  # TrafficBeacon
+                [0.11,  0.75,   0.59], # TrafficSign
+                [0.30,  0.45,   0.98], # TrafficSignal
+                [0.14,  0.20,   0.83], # TrafficGuide
+                [.1,    .1,       .1], # DynamicBarrier
+                [1.89,  1.19,   1.57], # Unclear
             ],
             rotations=[0, 1.57],
             reshape_out=True),
@@ -109,16 +132,18 @@ model = dict(
             nms_thr = 0.2, # nms_thr=0.2,
             score_thr = 0.05, # score_thr=0.05,
             min_bbox_size=0,
-            max_num=500
+            max_num=500,
+            assigner=dict(
+                type='Max3DIoUAssigner',
+                iou_calculator=dict(type='BboxOverlapsNearest3D'),
+                pos_iou_thr=0.6,
+                neg_iou_thr=0.3,
+                min_pos_iou=0.3,
+                ignore_iof_thr=-1,
+                gpu_assign_thr=0
+            ),
         ),
-        assigner=dict(
-            type='Max3DIoUAssigner',
-            iou_calculator=dict(type='BboxOverlapsNearest3D'),
-            pos_iou_thr=0.6,
-            neg_iou_thr=0.3,
-            min_pos_iou=0.3,
-            ignore_iof_thr=-1,
-            gpu_assign_thr=0),
+
     ),
     # model training settings (based on nuScenes model settings)
     # train_cfg=dict(pts=dict(code_weight=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]))
