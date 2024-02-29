@@ -1,6 +1,6 @@
 # from math import ceil
 # [tensor(25.0000), tensor(242.1388), tensor(3.0000)] [tensor(-24.9999), tensor(6.2734e-05), tensor(-4.9970)]
-voxel_size = [0.0075, 0.0075, 8] # Originally 0.25, 0.25, 8 # This might be Z, X, Y
+voxel_size = [0.1, 0.1, 8] # Originally 0.25, 0.25, 8 
 pcr_range = [-25, 0, -5, 25, 245, 3] 
 
 model = dict(
@@ -11,27 +11,37 @@ model = dict(
         voxel=True,
         voxel_layer=dict(
             voxel_size=voxel_size,
-            max_num_points=32,      
+            max_num_points=16,      
             point_cloud_range=pcr_range,
             max_voxels=(60000, 60000))),
 
-    pts_voxel_encoder=dict(
-        type='HardVFE',
-        in_channels=4,
-        feat_channels=[64], 
-        point_cloud_range=pcr_range,
+    # pts_voxel_encoder=dict(
+    #     type='HardVFE',
+    #     in_channels=4,
+    #     feat_channels=[64], 
+    #     point_cloud_range=pcr_range,
 
+    #     with_distance=False,
+    #     voxel_size=voxel_size,
+    #     with_cluster_center=True,
+    #     with_voxel_center=True,
+    #     norm_cfg=dict(type='naiveSyncBN1d', eps=1e-3, momentum=0.01)),
+    pts_voxel_encoder=dict(
+        type='PillarFeatureNet',
+        in_channels=4,
+        feat_channels=[64],
         with_distance=False,
         voxel_size=voxel_size,
-        with_cluster_center=True,
-        with_voxel_center=True,
-        norm_cfg=dict(type='naiveSyncBN1d', eps=1e-3, momentum=0.01)),
+        norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
+        legacy=False),
 
     pts_middle_encoder=dict(
         type='PointPillarsScatter', in_channels=64, 
         output_shape=[
-            int((pcr_range[4]-pcr_range[1])/voxel_size[0] + 1), # Y-range / x-size??! # Originally 800
-            int((pcr_range[3]-pcr_range[0])/voxel_size[2] + 1)  # X-range / Z-size??! # Originally 800
+            int(245 / 0.1),
+            int(50 / 0.1),
+            #int((pcr_range[4]-pcr_range[1])/voxel_size[0] + 1), # Y-range / x-size??! # Originally 800
+            # int((pcr_range[3]-pcr_range[0])/voxel_size[2] + 1)  # X-range / Z-size??! # Originally 800
             ] 
     ),
 
@@ -62,17 +72,18 @@ model = dict(
         anchor_generator=dict(
             type='AlignedAnchor3DRangeGenerator',
             ranges=[
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, 0, 25, 250, 0],
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, -0.1, 25, 250, 0.1],
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, -3, 25, 250, 0],
-                [-25, 0, -3, 25, 250, 0],
+                [-25, 0, -3, 25, 250, 1], # Vehicle
+                [-25, 0, -3, 25, 250, 1], # VulnerableVehicle
+                [-25, 0, -3, 25, 250, 1], # Pedestrian
+                [-25, 0, -3, 25, 250, 1], # Animal
+                [-25, 0, -3, 25, 250, 1], # StaticObject
+                # [-25, 0, 0, 25, 250, 0],  # PoleObject
+                # [-25, 0, -3, 25, 250, 0], # TrafficBeacon 
+                # [-25, 0, -0.1, 25, 250, 0.1], # TrafficSign
+                # [-25, 0, -3, 25, 250, 0], # TrafficSignal
+                # [-25, 0, -3, 25, 250, 0], # TrafficGuide
+                # [-25, 0, -3, 25, 250, 0], # DynamicBarrier
+                # [-25, 0, -3, 25, 250, 0], # Unclear
             ], 
             custom_values=[],
             scales=[1, 2, 4],
@@ -80,14 +91,15 @@ model = dict(
                 [4.01,  1.86,   1.53], # Vehicle
                 [1.7,   0.5,    1.2],  # VulnerableVehicle
                 [0.63,  0.63,   1.68], # Pedestrian
-                [.1,    .1,       .1],   # Animal
-                [0.19,  0.19,   5.14], # PoleObject
-                [.1,    .1,       .1],  # TrafficBeacon
-                [0.11,  0.75,   0.59], # TrafficSign
-                [0.30,  0.45,   0.98], # TrafficSignal
-                [0.14,  0.20,   0.83], # TrafficGuide
-                [.1,    .1,       .1], # DynamicBarrier
-                [1.89,  1.19,   1.57], # Unclear
+                [.1,    .1,       .1], # Animal
+                [0.30,  0.65,   0.83], # StaticObject
+                # [0.19,  0.19,   5.14], # PoleObject
+                # [.1,    .1,       .1], # TrafficBeacon
+                # [0.11,  0.75,   0.59], # TrafficSign
+                # [0.30,  0.45,   0.98], # TrafficSignal
+                # [0.14,  0.20,   0.83], # TrafficGuide
+                # [.1,    .1,       .1], # DynamicBarrier
+                # [1.89,  1.19,   1.57], # Unclear
             ],
             rotations=[0, 1.57],
             reshape_out=True),
@@ -106,7 +118,7 @@ model = dict(
             type='mmdet.CrossEntropyLoss', use_sigmoid=False,
             loss_weight=0.2),
             
-        num_classes=11,
+        num_classes=5,
         bbox_coder=dict(type='DeltaXYZWLHRBBoxCoder', code_size=7)),
 
     train_cfg=dict(
@@ -129,7 +141,7 @@ model = dict(
             use_rotate_nms=True, # use_rotate_nms=True, # TODO add this after testing is done
             nms_across_levels=False,
             nms_pre=1000,
-            nms_thr = 0.2, # nms_thr=0.2,
+            nms_thr = 0.02, # nms_thr=0.2,
             score_thr = 0.05, # score_thr=0.05,
             min_bbox_size=0,
             max_num=500,

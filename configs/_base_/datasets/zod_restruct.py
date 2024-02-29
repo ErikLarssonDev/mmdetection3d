@@ -1,7 +1,7 @@
 # dataset settings
 dataset_type = 'ZodDatasetRestruct'
-data_root = 'minizod/minzod_mmdet3d/' # 'minizod/' #
-class_names = ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear']  # replace with your dataset class
+data_root = 'minizod/' # 'minizod/minzod_mmdet3d/' # 
+class_names = ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject']  # replace with your dataset class
 point_cloud_range = [-25, 0, -5, 25, 245, 3]  # adjust according to your dataset
 input_modality = dict(use_lidar=True, use_camera=False)
 metainfo = dict(classes=class_names)
@@ -61,7 +61,7 @@ train_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type='RepeatDataset',
-        times=10,
+        times=100,
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
@@ -85,7 +85,7 @@ val_dataloader = dict(
         ann_file='minizod_infos_train.pkl',  # specify your validation pkl info TODO: Change to val
         pipeline=test_pipeline,
         modality=input_modality,
-        test_mode=False,
+        test_mode=True,
         metainfo=metainfo,
         box_type_3d='LiDAR'))
 val_evaluator = dict(
