@@ -9,6 +9,20 @@ import torch
 currentmaxpoint = [0, 0, 0]
 currentminpoint = [100, 100, 100]
 
+class_translation_map = { 
+    "Vehicle": "Vehicle",
+    "VulnerableVehicle": "VulnerableVehicle",
+    "Pedestrian": "Pedestrian",
+    "Animal": "Animal",
+    "PoleObject": "StaticObject",
+    "TrafficBeacon": "StaticObject",
+    "TrafficSign": "StaticObject",
+    "TrafficSignal": "StaticObject",
+    "TrafficGuide": "StaticObject",
+    "DynamicBarrier": "StaticObject",
+    "Unclear": "DontCare"
+}
+
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
     def __init__(self, *args, **kwargs):
@@ -16,7 +30,9 @@ class ZodDatasetRestruct(Det3DDataset):
     # replace with all the classes in customized pkl info file
         self.printed = False
     METAINFO = {
-        'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
+        'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
+        'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192), (24, 107, 24)],
+        'allClasses': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
         'object_range': [-25, 0, -5, 25, 245, 3]
     }
 
@@ -34,66 +50,48 @@ class ZodDatasetRestruct(Det3DDataset):
                   3D ground truth bboxes.
                 - gt_labels_3d (np.ndarray): Labels of ground truths.
         """
+        # Translate the class names to the ones used in training according to class_translation map
+        for annotation in info['instances']:
+            if class_translation_map[self.METAINFO['allClasses'][annotation['bbox_label_3d']]] == "DontCare":
+                new_label = -1
+            else:
+                new_label = self.METAINFO['classes'].index(class_translation_map[self.METAINFO['allClasses'][annotation['bbox_label_3d']]])
+            annotation['bbox_label_3d'] = new_label
+            annotation['bbox_label'] = new_label
 
+        # After class translation, let super class do what it wants with annotation info
         ann_info = super().parse_ann_info(info)
+
         if ann_info is None:
             print("WARNING: Got empty instance from parse_ann_info")
             ann_info = dict()
             # empty instance
             ann_info['gt_bboxes_3d'] = np.zeros((0, 7), dtype=np.float32)
             ann_info['gt_labels_3d'] = np.zeros(0, dtype=np.int64)
+
+
         # filter the gt classes not used in training
-        # ann_info = self._remove_dontcare(ann_info)
+        ann_info = self._remove_dontcare(ann_info)
         ann_info = self.filter_annotations_on_range(ann_info)
         gt_bboxes_3d = LiDARInstance3DBoxes(
             ann_info['gt_bboxes_3d'],
             origin=(0.5, 0.5, 0.5)
         ).convert_to(self.box_mode_3d)
 
-
+        
         ann_info['gt_bboxes_3d'] = gt_bboxes_3d
-        print(f"Training on data {ann_info}")
+        print(ann_info['gt_labels_3d'])
         return ann_info
 
     def parse_data_info(self, info):
         """
         Parse raw data from dataset
         """
-        # for instance in info['instances']:
-        #     instance['bbox'][2] = instance['bbox'][2] - instance['bbox'][5] / 2 
-        #     instance['bbox_3d'][2] = instance['bbox_3d'][2] - instance['bbox_3d'][5] / 2 
         info = super().parse_data_info(info)
         return info
 
     def prepare_data(self, idx):
         data = super().prepare_data(idx)
-        # maxx = torch.max(data['inputs']['points'][:,0])
-        # maxy = torch.max(data['inputs']['points'][:,1])
-        # maxz = torch.max(data['inputs']['points'][:,2])
-        # minx = torch.min(data['inputs']['points'][:,0])
-        # miny = torch.min(data['inputs']['points'][:,1])
-        # minz = torch.min(data['inputs']['points'][:,2])
-        # if maxx > currentmaxpoint[0]:
-        #     currentmaxpoint[0] = maxx
-        #     print(f"Max x value increased. Current max and min are {currentmaxpoint} and {currentminpoint}")
-        # if maxy > currentmaxpoint[1]:
-        #     currentmaxpoint[1] = maxy
-        #     print(f"Max y value increased. Current max and min are {currentmaxpoint} and {currentminpoint}")
-        # if maxz > currentmaxpoint[2]:
-        #     currentmaxpoint[2] = maxz
-        #     print(f"Max z value increased. Current max and min are {currentmaxpoint} and {currentminpoint}")
-        # if minx < currentminpoint[0]:
-        #     currentminpoint[0] = minx
-        #     print(f"Min x value decreased. Current max and min are {currentmaxpoint} and {currentminpoint}")
-        # if miny < currentminpoint[1]:
-        #     currentminpoint[1] = miny
-        #     print(f"Min y value decreased. Current max and min are {currentmaxpoint} and {currentminpoint}")
-        # if minz < currentminpoint[2]:
-        #     currentminpoint[2] = minz
-        #     print(f"Min z value decreased. Current max and min are {currentmaxpoint} and {currentminpoint}")
-        # if not self.printed:
-        #     print(f"Loading data: from idx {idx} points have length {len(data['inputs']['points'])}")
-        #     self.printed = True
         return data
 
     
