@@ -31,7 +31,7 @@ class ZodDatasetRestruct(Det3DDataset):
         self.printed = False
     METAINFO = {
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
-        'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192), (24, 107, 24)],
+        'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192), (60, 255, 60)],
         'allClasses': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
         'object_range': [-25, 0, -5, 25, 245, 3]
     }
