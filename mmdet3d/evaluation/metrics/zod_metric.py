@@ -102,38 +102,42 @@ class ZodMetric(BaseMetric):
         logger: MMLogger = MMLogger.get_current_instance()
         self.classes = self.dataset_meta['classes']
         min_overlaps = [0.1, 0.3, 0.5, 0.7, 0.9]
-        class_tps = np.zeros([len(self.classes), len(min_overlaps)])
-        class_fps = np.zeros([len(self.classes), len(min_overlaps)])
-        class_fns = np.zeros([len(self.classes), len(min_overlaps)])
-        
-        class_preds = np.zeros([len(self.classes)])
-        class_gts = np.zeros([len(self.classes)])
-        
-        total_gts = 0
-        total_preds = 0
-        for image in results:
-            tps, fps, fns, num_gts, num_preds, image_gt_n_class, image_dt_n_class = eval_image(
-                dt_annos=image["pred_instances_3d"],
-                gt_annos=image["gt_instances_3d"],
-                classes=self.classes,
-                min_overlaps=min_overlaps)
-            class_tps += tps
-            class_fps += fps
-            class_fns += fns
-            total_gts += num_gts
-            total_preds += num_preds
-            class_gts += image_gt_n_class
-            class_preds += image_dt_n_class
+        range_intervals = [[0,400], [0,100], [100, 150], [150, 250]]
+        class_tps = np.zeros([len(range_intervals), len(self.classes), len(min_overlaps)])
+        class_fps = np.zeros([len(range_intervals), len(self.classes), len(min_overlaps)])
+        class_fns = np.zeros([len(range_intervals), len(self.classes), len(min_overlaps)])
+
+        class_preds = np.zeros([len(range_intervals), len(self.classes)])
+        class_gts = np.zeros([len(range_intervals), len(self.classes)])
+
+        for range_interval_index, range_interval in enumerate(range_intervals):
+            for image in results:
+
+                dt_instances_in_range = filter_on_range(image["pred_instances_3d"], range_interval)
+                gt_instances_in_range = filter_on_range(image["gt_instances_3d"], range_interval)
+                
+                tps, fps, fns, num_gts, num_preds, image_gt_n_class, image_dt_n_class = eval_image(
+                    dt_annos=dt_instances_in_range,
+                    gt_annos=gt_instances_in_range,
+                    classes=self.classes,
+                    min_overlaps=min_overlaps
+                )
+                
+                class_tps[range_interval_index, :, :] += tps
+                class_fps[range_interval_index, :, :] += fps
+                class_fns[range_interval_index, :, :] += fns
+                class_gts[range_interval_index, :] += image_gt_n_class
+                class_preds[range_interval_index, :] += image_dt_n_class
+            
         
         precision = class_tps / (class_tps + class_fps + 1e-6) # 1e-6 to avoid division by zero
         recall = class_tps / (class_tps + class_fns + 1e-6) # 1e-6 to avoid division by zero
-        accuracy = class_tps / (total_preds + 1e-6) # TODO check if this is correct
-        ap = np.mean(precision, axis=1)
+        # accuracy = class_tps / (total_preds + 1e-6) # TODO check if this is correct
+        ap = np.mean(precision, axis=0)
         m_ap = np.mean(ap)
         return dict(
             precision=precision,
             recall=recall,
-            accuracy=accuracy,
             ap=ap,
             map=m_ap,
             class_gts=class_gts,
@@ -170,6 +174,17 @@ class ZodMetric(BaseMetric):
         return
     
 
+def filter_on_range(instances, range_interval):
+    filtered_instances = dict({})
+    boxes_center = instances['bboxes_3d'].center.cpu().numpy()
+    center_distances = np.sqrt(np.sum(boxes_center** 2, axis=1))
+    filter_mask = np.all([center_distances > range_interval[0], center_distances < range_interval[1]], axis=0)
+    
+    for key in instances.keys():
+        filtered_instances[key] = (instances[key][filter_mask])
+    
+    return filtered_instances
+
 def eval_image(gt_annos,
             dt_annos,
             classes,
@@ -184,23 +199,32 @@ def eval_image(gt_annos,
         bboxes_3d
     classes: A list of str in order
     """
-    # assert len(gt_annos) == len(dt_annos)
-    dt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in dt_annos['bboxes_3d'].cpu()])
-    gt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in gt_annos['bboxes_3d'].cpu()])
-    dt_labels = np.hstack([annot for annot in dt_annos['labels_3d']])
-    dt_scores = np.hstack([annot for annot in dt_annos['scores_3d']]) # TODO if this is the class score or the object score, make certain that it is the score for the predicted class 
-    gt_labels = np.hstack([annot for annot in gt_annos['labels_3d']])
-
-    num_gts = len(gt_boxes)
-    num_preds = len(dt_boxes)
-
     dt_per_class = np.zeros([len(classes)], dtype=np.int64)
     gt_per_class = np.zeros([len(classes)], dtype=np.int64)
 
-    for i, name in enumerate(classes):
-        dt_per_class[i] = np.sum(dt_labels == i)
-        gt_per_class[i] = np.sum(gt_labels == i)
+    if not len(gt_annos['bboxes_3d']) == 0: 
+        gt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in gt_annos['bboxes_3d'].cpu()])
+        gt_labels = np.hstack([annot for annot in gt_annos['labels_3d']])
+        for i, name in enumerate(classes):
+            gt_per_class[i] = np.sum(gt_labels == i)
+
     
+    if not len(dt_annos['bboxes_3d']) == 0:
+        dt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in dt_annos['bboxes_3d'].cpu()])
+        dt_labels = np.hstack([annot for annot in dt_annos['labels_3d']])
+        dt_scores = np.hstack([annot for annot in dt_annos['scores_3d']]) # TODO if this is the class score or the object score, make certain that it is the score for the predicted class 
+        for i, name in enumerate(classes):
+            dt_per_class[i] = np.sum(dt_labels == i)
+
+
+     # Return in case detections or ground truths don't exist
+    if len(gt_annos['bboxes_3d']) == 0 or len(dt_annos['bboxes_3d']) == 0:
+        tps = np.zeros([len(classes), len(min_overlaps)])
+        fns = gt_per_class # if there are no detections, all ground truths are false negatives, if there also are no ground truths, this will be zero
+        fps = dt_per_class # if there are no ground truths, all detections are false positives, if there also are no detections, this will be zero
+        return tps, fps, fns, len(gt_annos['bboxes_3d']), len(gt_annos['bboxes_3d']), gt_per_class, dt_per_class
+
+
     overlaps = calculate_iou_partly(dt_boxes, gt_boxes)
     num_minoverlap = len(min_overlaps)
     num_class = len(classes)
@@ -212,26 +236,17 @@ def eval_image(gt_annos,
     fns = np.zeros(
         [num_class, num_minoverlap])
     
-    for class_index, current_class in enumerate(classes):
-        for overlaps_index, min_overlap in enumerate(min_overlaps):
-            thresholdss = []
-            rets = compute_statistics_jit(
-                overlaps,
-                gt_boxes,
-                dt_boxes,
-                current_class_label=class_index,
-                dt_pred_labels=dt_labels,
-                gt_pred_labels=gt_labels,
-                dt_scores=dt_scores,
-                min_overlap=min_overlap,
-                thresh=0.0, # TODO check if this is correct
-                compute_fp=True)
-              
-            tp, fp, fn, similarity, thresholds = rets
-            tps[class_index, overlaps_index] = tp
-            fps[class_index, overlaps_index] = fp
-            fns[class_index, overlaps_index] = fn
-    return tps, fps, fns, num_gts, num_preds, gt_per_class, dt_per_class
+    thresholdss = []
+    rets = compute_statistics_jit(
+        overlaps,
+        min_overlaps=min_overlaps,
+        num_classes=num_class,
+        pred_labels=dt_labels,
+        gt_labels=gt_labels)
+        
+    tps, fps, fns = rets
+
+    return tps, fps, fns, len(gt_labels), len(dt_labels), gt_per_class, dt_per_class
 
 def calculate_iou_partly(dt_boxes, gt_boxes):
 
@@ -297,10 +312,56 @@ def d3_box_overlap_kernel(boxes, qboxes, rinc, criterion=-1):
                     
 # @numba.jit(nopython=True)
 def compute_statistics_jit(overlaps,
+                           min_overlaps,
+                           num_classes,
+                           pred_labels,
+                           gt_labels):
+
+    tps = np.zeros([num_classes, len(min_overlaps)])
+    fps = np.zeros([num_classes, len(min_overlaps)])
+    fns = np.zeros([num_classes, len(min_overlaps)])
+    for iou_threshold_index, iou_threshold in enumerate(min_overlaps):
+        prediction_indexes_to_match = list(range(len(pred_labels))) #TODO change to deque
+        matched_gts = np.full(len(gt_labels), -1) # -1 means that the ground truth has not been matched to a detection, each value in the list corresponds to a detection index
+        while len(prediction_indexes_to_match) > 0:
+            prediction_index = prediction_indexes_to_match.pop(0)
+            iou_sorted_gt_indexes = np.argsort(overlaps[prediction_index, :])[::-1]
+
+            for candidate_gt_index in iou_sorted_gt_indexes:
+                if overlaps[prediction_index, candidate_gt_index] < iou_threshold:
+                    break
+                previous_match = matched_gts[candidate_gt_index]
+                if previous_match == -1: # The candidate gt is not matched to a prediction
+                    matched_gts[candidate_gt_index] = prediction_index
+                    break
+                elif overlaps[previous_match, candidate_gt_index] < overlaps[prediction_index, candidate_gt_index]: #Current prediction is a better match than previous prediction
+                    matched_gts[candidate_gt_index] = prediction_index
+                    prediction_indexes_to_match.append(previous_match)
+                    break
+            
+        for gt_index, dt_index in enumerate(matched_gts):
+            if dt_index == -1:
+                fns[gt_labels[gt_index], iou_threshold_index] += 1
+
+            elif pred_labels[dt_index] == gt_labels[gt_index]:
+                tps[gt_labels[gt_index], iou_threshold_index] += 1
+
+            else:
+                fps[pred_labels[dt_index], iou_threshold_index] += 1
+                fns[gt_labels[gt_index], iou_threshold_index] += 1
+
+        for prediction_index in range(len(pred_labels)):
+            if prediction_index not in matched_gts:
+                fps[pred_labels[prediction_index], iou_threshold_index] += 1
+
+    return tps, fps, fns
+
+# @numba.jit(nopython=True)
+def compute_statistics_jit_old(overlaps,
                            gt_datas,
                            dt_datas,
-                           min_overlap,
-                           current_class_label,
+                           min_overlaps,
+                           num_classes,
                            dt_pred_labels,
                            gt_pred_labels,
                            dt_scores,
@@ -382,29 +443,13 @@ def compute_statistics_jit(overlaps,
             if (not (assigned_detection[i] or ignored_det[i] == -1
                      or ignored_det[i] == 1 or ignored_threshold[i])):
                 fp += 1
-        # # I think this was to not count ignored assigns as false positives
-        # nstuff = 0
-        # if metric == 0:
-        #     for i in range(dc_bboxes.shape[0]):
-        #         for j in range(det_size):
-        #             if (assigned_detection[j]):
-        #                 continue
-        #             if (ignored_det[j] == -1 or ignored_det[j] == 1):
-        #                 continue
-        #             if (ignored_threshold[j]):
-        #                 continue
-        #             if overlaps[j, i] > min_overlap:
-        #                 assigned_detection[j] = True
-        #                 nstuff += 1
-        # fp -= nstuff
+
         if compute_aos:
             tmp = np.zeros((fp + delta_idx, ))
             # tmp = [0] * fp
             for i in range(delta_idx):
                 tmp[i + fp] = (1.0 + np.cos(delta[i])) / 2.0
-                # tmp.append((1.0 + np.cos(delta[i])) / 2.0)
-            # assert len(tmp) == fp + tp
-            # assert len(delta) == tp
+
             if tp > 0 or fp > 0:
                 similarity = np.sum(tmp)
             else:
