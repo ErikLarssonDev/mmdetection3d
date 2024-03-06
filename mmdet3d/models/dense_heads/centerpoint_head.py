@@ -565,7 +565,7 @@ class CenterHead(BaseModule):
                     ind[new_idx] = y * feature_map_size[0] + x
                     mask[new_idx] = 1
                     # TODO: support other outdoor dataset
-                    vx, vy = task_boxes[idx][k][7:]
+                    # vx, vy = task_boxes[idx][k][7:]
                     rot = task_boxes[idx][k][6]
                     box_dim = task_boxes[idx][k][3:6]
                     if self.norm_bbox:
@@ -575,8 +575,10 @@ class CenterHead(BaseModule):
                         z.unsqueeze(0), box_dim,
                         torch.sin(rot).unsqueeze(0),
                         torch.cos(rot).unsqueeze(0),
-                        vx.unsqueeze(0),
-                        vy.unsqueeze(0)
+                        torch.zeros_like(rot, device=device).unsqueeze(0),
+                        torch.zeros_like(rot, device=device).unsqueeze(0)
+                        # vx.unsqueeze(0),
+                        # vy.unsqueeze(0)
                     ])
 
             heatmaps.append(heatmap)
@@ -602,6 +604,7 @@ class CenterHead(BaseModule):
         outs = self(pts_feats)
         batch_gt_instance_3d = []
         for data_sample in batch_data_samples:
+            data_sample.gt_instances_3d.bboxes_3d.tensor =  torch.cat([data_sample.gt_instances_3d.bboxes_3d.tensor, torch.zeros(data_sample.gt_instances_3d.bboxes_3d.tensor.shape[0], 2).to(0)], dim=1)
             batch_gt_instance_3d.append(data_sample.gt_instances_3d)
         losses = self.loss_by_feat(outs, batch_gt_instance_3d)
         return losses
@@ -639,8 +642,7 @@ class CenterHead(BaseModule):
             # reconstruct the anno_box from multiple reg heads
             preds_dict[0]['anno_box'] = torch.cat(
                 (preds_dict[0]['reg'], preds_dict[0]['height'],
-                 preds_dict[0]['dim'], preds_dict[0]['rot'],
-                 preds_dict[0]['vel']),
+                 preds_dict[0]['dim'], preds_dict[0]['rot']),
                 dim=1)
 
             # Regression loss for dimension, offset, height, rotation
@@ -656,7 +658,7 @@ class CenterHead(BaseModule):
             code_weights = self.train_cfg.get('code_weights', None)
             bbox_weights = mask * mask.new_tensor(code_weights)
             loss_bbox = self.loss_bbox(
-                pred, target_box, bbox_weights, avg_factor=(num + 1e-4))
+                pred, target_box[:,:,:8], bbox_weights[:,:,:8], avg_factor=(num + 1e-4))
             loss_dict[f'task{task_id}.loss_heatmap'] = loss_heatmap
             loss_dict[f'task{task_id}.loss_bbox'] = loss_bbox
         return loss_dict

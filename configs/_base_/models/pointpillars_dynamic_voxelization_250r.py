@@ -1,40 +1,44 @@
 # from math import ceil
 # [tensor(25.0000), tensor(242.1388), tensor(3.0000)] [tensor(-24.9999), tensor(6.2734e-05), tensor(-4.9970)]
 voxel_size = [0.16, 0.16, 8] # Originally 0.25, 0.25, 8 0.16 0.16
-pcr_range = [-25, 0, -5, 25, 245, 3]
+pcr_range = [-25.04, 0, -5, 25.04, 245.12, 3]
 
 model = dict(
     # with_cp = True, #Tip to reduce GPU memory
-    type='MVXFasterRCNN',
+    type='DynamicVoxelNet',
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
         voxel=True,
+        voxel_type='dynamic',
         voxel_layer=dict(
             voxel_size=voxel_size,
-            max_num_points=16,      
+            max_num_points=-1,      
             point_cloud_range=pcr_range,
-            max_voxels=(60000, 60000))),
+            max_voxels=(-1, -1))),
+        
 
-    pts_voxel_encoder=dict(
-        type='PillarFeatureNet',
+    voxel_encoder=dict(
+        type='DynamicPillarFeatureNet',
         in_channels=4,
         feat_channels=[64],
         with_distance=False,
         voxel_size=voxel_size,
+        point_cloud_range=pcr_range,
         norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
-        legacy=False),
+        # legacy=False
+    ),
 
-    pts_middle_encoder=dict(
+    middle_encoder=dict(
         type='PointPillarsScatter', in_channels=64, 
         output_shape=[
-            int(245 / 0.16 + 1),
-            int(50 / 0.16 + 1) ,
+            int(((pcr_range[4]-pcr_range[1]) / voxel_size[0]) + 1),
+            int(((pcr_range[3]-pcr_range[0]) / voxel_size[1]) + 1) ,
             #int((pcr_range[4]-pcr_range[1])/voxel_size[0] + 1), # Y-range / x-size??! # Originally 400
             # int((pcr_range[3]-pcr_range[0])/voxel_size[2] + 1)  # X-range / Z-size??! # Originally 400
             ] 
     ),
 
-    pts_backbone=dict(
+    backbone=dict(
         type='SECOND',
         in_channels=64,
         norm_cfg=dict(type='naiveSyncBN2d', eps=1e-3, momentum=0.01),
@@ -43,7 +47,7 @@ model = dict(
         out_channels=[64, 128, 256]),
 
 
-    pts_neck=dict(
+    neck=dict(
         type='mmdet.FPN',
         norm_cfg=dict(type='naiveSyncBN2d', eps=1e-3, momentum=0.01),
         act_cfg=dict(type='ReLU'),
@@ -52,7 +56,7 @@ model = dict(
         start_level=0,
         num_outs=3),
 
-    pts_bbox_head=dict(
+    bbox_head=dict(
         type='Anchor3DHead',
         in_channels=256,
         feat_channels=256,
@@ -111,38 +115,37 @@ model = dict(
         bbox_coder=dict(type='DeltaXYZWLHRBBoxCoder', code_size=7)),
 
     train_cfg=dict(
-        pts=dict(
-            assigner=dict(
-                type='Max3DIoUAssigner',
-                iou_calculator=dict(type='BboxOverlapsNearest3D'),
-                pos_iou_thr=0.6,
-                neg_iou_thr=0.3,
-                min_pos_iou=0.3,
-                ignore_iof_thr=-1,
-                gpu_assign_thr=-1), # memory reduce tip, should be as high as GPU can handle -1 is infinite
-            allowed_border=0,
-            # code_weight=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], #pcr_range
-            pos_weight=-1,
-            debug=False)
+
+        assigner=dict(
+            type='Max3DIoUAssigner',
+            iou_calculator=dict(type='BboxOverlapsNearest3D'),
+            pos_iou_thr=0.6,
+            neg_iou_thr=0.3,
+            min_pos_iou=0.3,
+            ignore_iof_thr=-1,
+            gpu_assign_thr=-1), # memory reduce tip, should be as high as GPU can handle -1 is infinite
+        allowed_border=0,
+        # code_weight=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], #pcr_range
+        pos_weight=-1,
+        debug=False
     ),
     test_cfg=dict(
-        pts=dict(
-            use_rotate_nms=True, # use_rotate_nms=True
-            nms_across_levels=False,
-            nms_pre=1000,
-            nms_thr = 0.02, # nms_thr=0.2,
-            score_thr = 0.05, # score_thr=0.05,
-            min_bbox_size=0,
-            max_num=500,
-            assigner=dict(
-                type='Max3DIoUAssigner',
-                iou_calculator=dict(type='BboxOverlapsNearest3D'),
-                pos_iou_thr=0.6,
-                neg_iou_thr=0.3,
-                min_pos_iou=0.3,
-                ignore_iof_thr=-1,
-                gpu_assign_thr=0
-            ),
+
+        use_rotate_nms=True, # use_rotate_nms=True
+        nms_across_levels=False,
+        nms_pre=1000,
+        nms_thr = 0.02, # nms_thr=0.2,
+        score_thr = 0.05, # score_thr=0.05,
+        min_bbox_size=0,
+        max_num=500,
+        assigner=dict(
+            type='Max3DIoUAssigner',
+            iou_calculator=dict(type='BboxOverlapsNearest3D'),
+            pos_iou_thr=0.6,
+            neg_iou_thr=0.3,
+            min_pos_iou=0.3,
+            ignore_iof_thr=-1,
+            gpu_assign_thr=0  
         ),
     ),
     # model training settings (based on nuScenes model settings)

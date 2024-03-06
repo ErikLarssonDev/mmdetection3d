@@ -65,14 +65,16 @@ model = dict(
     # model training and testing settings
     train_cfg=dict(
         pts=dict(
-            grid_size=[512, 512, 1],
+            grid_size=[512, 2048, 1],
             voxel_size=voxel_size,
             out_size_factor=4,
             dense_reg=1,
             gaussian_overlap=0.1,
             max_objs=500,
             min_radius=2,
-            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2])),
+            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0]
+        )
+    ),
     test_cfg=dict(
         pts=dict(
             post_center_limit_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],

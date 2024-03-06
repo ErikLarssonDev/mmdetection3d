@@ -1,6 +1,6 @@
 _base_ = '../pointpillars/pointpillars_hv_secfpn_8xb6-160e_kitti-3d-car.py'
 
-voxel_size = [0.16, 0.16, 4]
+voxel_size = [0.2, 0.2, 4]
 point_cloud_range = [0, -39.68, -3, 69.12, 39.68, 1]
 
 model = dict(

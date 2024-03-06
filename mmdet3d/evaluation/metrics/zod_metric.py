@@ -78,13 +78,6 @@ class ZodMetric(BaseMetric):
         self.default_cam_key = default_cam_key
         self.backend_args = backend_args
 
-        allowed_metrics = ['bbox', 'img_bbox', 'mAP', 'LET_mAP']
-        self.metrics = metric if isinstance(metric, list) else [metric]
-        for metric in self.metrics:
-            if metric not in allowed_metrics:
-                raise KeyError("metric should be one of 'bbox', 'img_bbox', "
-                               f'but got {metric}.')
-
    
     def compute_metrics(self, results: List) -> Dict:
         """
@@ -157,21 +150,30 @@ class ZodMetric(BaseMetric):
         """
         gt_batch = data_batch["data_samples"]
         for pred_sample, gt_frame in zip(data_samples, gt_batch):
-            gt_annotation = gt_frame.gt_instances_3d # .eval_ann_info
+
+            gt_annotation = gt_frame.eval_ann_info
             result = dict()
-            # pred_3d = pred_sample['pred_instances_3d']
-            # print(gt_annotation)
-            # gt_3d = dict(
-            #     labels_3d = gt_annotation.labels_3d, #["gt_bboxes_labels"]
-            #     bboxes_3d = gt_annotation.bboxes_3d #["gt_bboxes_3d"]
-            # )
+            # Try to get gt_bboxes_labels, if it does not exist, get gt_labels_3d
+            labels_3d = gt_annotation.get("gt_bboxes_labels", gt_annotation["gt_labels_3d"])
+
+            
+            gt_3d = dict(
+                labels_3d = labels_3d,
+                bboxes_3d = gt_annotation["gt_bboxes_3d"]
+                )
             # for attr_name in pred_3d:
             #     pred_3d[attr_name] = pred_3d[attr_name].to('cpu')
             result['pred_instances_3d'] = pred_sample['pred_instances_3d']
-            result['gt_instances_3d'] = gt_annotation
+            result['gt_instances_3d'] = gt_3d
+            result['sample_idx'] = pred_sample['sample_idx']
             self.results.append(result)
             
         return
+    
+    def evaluate(self, results: List[dict]) -> Dict:
+        metrics = self.compute_metrics(results)
+        
+        return metrics[0]
     
 
 def filter_on_range(instances, range_interval):
@@ -224,8 +226,9 @@ def eval_image(gt_annos,
         fps = dt_per_class # if there are no ground truths, all detections are false positives, if there also are no detections, this will be zero
         return tps, fps, fns, len(gt_annos['bboxes_3d']), len(gt_annos['bboxes_3d']), gt_per_class, dt_per_class
 
-
-    overlaps = calculate_iou_partly(dt_boxes, gt_boxes)
+    if len(dt_boxes) == 0 or len(gt_boxes) == 0:
+        overlaps = np.zeros([len(dt_boxes), len(gt_boxes)])
+    overlaps = calculate_iou_partly(dt_boxes, gt_boxes) # Overlaps is matrix (preds X gts)
     num_minoverlap = len(min_overlaps)
     num_class = len(classes)
 
@@ -272,8 +275,12 @@ def get_split_parts(num, num_part):
 def d3_box_overlap(boxes, qboxes, criterion=-1):
     from mmdet3d.evaluation.functional.kitti_utils.rotate_iou import rotate_iou_gpu_eval
     # Get the BEV IoU
-    rinc = rotate_iou_gpu_eval(boxes[:, [0, 1, 3, 4, 6]], #Changed from 0, 2, 3, 5, 6
-                               qboxes[:, [0, 1, 3, 4, 6]], -1)
+    try:
+        rinc = rotate_iou_gpu_eval(boxes[:, [0, 1, 3, 4, 6]], #Changed from 0, 2, 3, 5, 6
+                                qboxes[:, [0, 1, 3, 4, 6]], -1)
+    except Exception as e:
+        print(e)
+        print(f"Got error in d3_box_overlap boxes: {boxes}, qboxes: {qboxes}")
     # Commenting out this part since it only seems to be for CAMERA,
     # not lidar
     # d3_box_overlap_kernel(boxes, qboxes, rinc, criterion)

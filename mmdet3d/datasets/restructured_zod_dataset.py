@@ -33,7 +33,7 @@ class ZodDatasetRestruct(Det3DDataset):
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
         'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192), (60, 255, 60)],
         'allClasses': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
-        'object_range': [-25, 0, -5, 25, 245, 3]
+        'object_range': [-25, 0, -5, 25, 250, 3]
     }
 
     def parse_ann_info(self, info):
@@ -80,7 +80,6 @@ class ZodDatasetRestruct(Det3DDataset):
 
         
         ann_info['gt_bboxes_3d'] = gt_bboxes_3d
-        print(ann_info['gt_labels_3d'])
         return ann_info
 
     def parse_data_info(self, info):
@@ -107,10 +106,8 @@ class ZodDatasetRestruct(Det3DDataset):
         for key in ann_info.keys():
             if key != 'instances':
                 filtered_annotations[key] = (ann_info[key][filter_mask])
-        filtered_annotation_instances = []
-        for instance, keep in zip(ann_info['instances'], filter_mask):
-            if keep:
-                filtered_annotation_instances.append(instance)
-        filtered_annotations['instances'] = filtered_annotation_instances
+            else:
+                filtered_annotations[key] = ann_info[key]
+
         return filtered_annotations
         
