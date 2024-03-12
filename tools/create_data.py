@@ -21,7 +21,7 @@ def zod_data_prep(root_path,
     zod.create_zod_info_file(root_path, extra_tag, save_path, relative_path=False)
     update_pkl_infos('custom',out_dir=save_path, pkl_path=osp.join(save_path, f'{extra_tag}_infos_train.pkl'))
     update_pkl_infos('custom',out_dir=save_path, pkl_path=osp.join(save_path, f'{extra_tag}_infos_val.pkl'))
-    # update_pkl_infos('custom',out_dir=save_path, pkl_path=osp.join(save_path, f'{extra_tag}_infos_test.pkl'))
+    update_pkl_infos('custom',out_dir=save_path, pkl_path=osp.join(save_path, f'{extra_tag}_infos_test.pkl'))
 
 def kitti_data_prep(root_path,
                     info_prefix,

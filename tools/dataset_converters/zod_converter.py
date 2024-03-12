@@ -151,6 +151,7 @@ def create_zod_info_file(data_path,
         data_path,
         image_ids=test_img_ids,
         label_info=True)
+    _calculate_num_points_in_gt(data_path, kitti_infos_test, relative_path)
     filename = save_path / f'{pkl_prefix}_infos_test.pkl'
     print(f'Test info file is saved to {filename}')
     mmengine.dump(kitti_infos_test, filename)
