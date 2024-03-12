@@ -63,7 +63,7 @@ class ZodDatasetRestruct(Det3DDataset):
         ann_info = super().parse_ann_info(info)
 
         if ann_info is None:
-            print("WARNING: Got empty instance from parse_ann_info")
+            print(f"WARNING: Got empty instance from parse_ann_info {info['lidar_points']['lidar_path']}")
             ann_info = dict()
             # empty instance
             ann_info['gt_bboxes_3d'] = np.zeros((0, 7), dtype=np.float32)
