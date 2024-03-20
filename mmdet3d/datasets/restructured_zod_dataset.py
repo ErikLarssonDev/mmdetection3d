@@ -4,10 +4,13 @@ from mmdet3d.registry import DATASETS
 from mmdet3d.structures.bbox_3d.lidar_box3d import LiDARInstance3DBoxes
 from .det3d_dataset import Det3DDataset
 import numpy as np
+import copy
 import torch
+
 
 currentmaxpoint = [0, 0, 0]
 currentminpoint = [100, 100, 100]
+
 
 class_translation_map = { 
     "Vehicle": "Vehicle",
@@ -25,10 +28,11 @@ class_translation_map = {
 
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, frames_before=2, frames_after=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    # replace with all the classes in customized pkl info file
-        self.printed = False
+        self.frames_before = frames_before
+        self.frames_after = frames_after
+
     METAINFO = {
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
         'palette': [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)],
@@ -63,7 +67,7 @@ class ZodDatasetRestruct(Det3DDataset):
         ann_info = super().parse_ann_info(info)
 
         if ann_info is None:
-            print("WARNING: Got empty instance from parse_ann_info")
+            print(f"WARNING: Got empty instance from parse_ann_info {info['lidar_points']['lidar_path']}")
             ann_info = dict()
             # empty instance
             ann_info['gt_bboxes_3d'] = np.zeros((0, 7), dtype=np.float32)
@@ -89,9 +93,54 @@ class ZodDatasetRestruct(Det3DDataset):
         info = super().parse_data_info(info)
         return info
 
-    def prepare_data(self, idx):
-        data = super().prepare_data(idx)
-        return data
+    def prepare_data(self, index: int):
+        """Data preparation for both training and testing stage.
+
+        Called by `__getitem__`  of dataset.
+
+        Args:
+            index (int): Index for accessing the target data.
+
+        Returns:
+            dict or None: Data dict of the corresponding index.
+        """
+        ori_input_dict = self.get_data_info(index)
+
+        # deepcopy here to avoid inplace modification in pipeline.
+        input_dict = copy.deepcopy(ori_input_dict)
+
+        # box_type_3d (str): 3D box type.
+        input_dict['box_type_3d'] = self.box_type_3d
+        # box_mode_3d (str): 3D box mode.
+        input_dict['box_mode_3d'] = self.box_mode_3d
+        # pre-pipline return None to random another in `__getitem__`
+        if not self.test_mode and self.filter_empty_gt:
+            if len(input_dict['ann_info']['gt_labels_3d']) == 0:
+                return None
+
+        example = self.pipeline(input_dict)
+        
+        saved_lidar_path = input_dict['lidar_points']["lidar_path"]
+        for frame_before_index in range(self.frames_before):
+            input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f".bin")
+            example['inputs']['points'] = torch.cat((example['inputs']['points'], self.pipeline(input_dict)['inputs']['points']),0) # Add points from previous frames
+        for frame_after_index in range(self.frames_after):
+            input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_a{frame_after_index+1}.bin")
+            example['inputs']['points'] = torch.cat((example['inputs']['points'], self.pipeline(input_dict)['inputs']['points']),0) # Add points from future frames
+        if not self.test_mode and self.filter_empty_gt:
+            # after pipeline drop the example with empty annotations
+            # return None to random another in `__getitem__`
+            if example is None or len(
+                    example['data_samples'].gt_instances_3d.labels_3d) == 0:
+                return None
+
+        if self.show_ins_var:
+            if 'ann_info' in ori_input_dict:
+                self._show_ins_var(
+                    ori_input_dict['ann_info']['gt_labels_3d'],
+                    example['data_samples'].gt_instances_3d.labels_3d)
+
+        return example
 
     
     def filter_annotations_on_range(self, ann_info):

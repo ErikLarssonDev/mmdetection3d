@@ -100,7 +100,6 @@ class ZodMetric(BaseMetric):
                     bboxes_3d
         ]
         """
-        print(f"Computing metrics got results: {results}")
         logger: MMLogger = MMLogger.get_current_instance()
         self.classes = self.dataset_meta['classes']
         min_overlaps = [0.1, 0.3, 0.5, 0.7, 0.9]
@@ -175,18 +174,28 @@ class ZodMetric(BaseMetric):
                 labels_3d = labels_3d,
                 bboxes_3d = gt_annotation["gt_bboxes_3d"]
                 )
-            # for attr_name in pred_3d:
-            #     pred_3d[attr_name] = pred_3d[attr_name].to('cpu')
+            # for attr_name in gt_3d:
+            #     gt_3d[attr_name] = gt_3d[attr_name].to('cpu')
+            for attr_name in pred_sample['pred_instances_3d']:
+                pred_sample['pred_instances_3d'][attr_name] = pred_sample['pred_instances_3d'][attr_name].to('cpu')
             result['pred_instances_3d'] = pred_sample['pred_instances_3d']
             result['gt_instances_3d'] = gt_3d
             result['sample_idx'] = pred_sample['sample_idx']
             self.results.append(result)
             
             if SAVE_PREDS_TO_FILE:
-                for cls, bboxes in zip(gt_3d['labels_3d'], gt_3d['bboxes_3d']):
-                    batch_gts.append(np.array([float(cls.item())] + bboxes.cpu().tolist()))
-                for cls, bboxes in zip(result['pred_instances_3d']['labels_3d'], result['pred_instances_3d']['bboxes_3d']):
-                    batch_preds.append(np.array([float(cls.item())] + bboxes.cpu().tolist()))
+                if gt_3d['labels_3d'] is not None:
+                    for cls, bboxes in zip(gt_3d['labels_3d'], gt_3d['bboxes_3d']):
+                        batch_gts.append(np.array([float(cls.item())] + bboxes.cpu().tolist()))
+                else: 
+                    print("Didnt get any gts for sample idx: ", result['sample_idx'] )
+                    batch_gts.append(np.array([]))
+                if result['pred_instances_3d']['labels_3d'] is not None:
+                    for cls, bboxes in zip(result['pred_instances_3d']['labels_3d'], result['pred_instances_3d']['bboxes_3d']):
+                        batch_preds.append(np.array([float(cls.item())] + bboxes.cpu().tolist()))
+                else:
+                    print("Didnt get any preds")
+                    batch_preds.append(np.array([]))
         preds_to_save.append(np.array(batch_preds))
         gts_to_save.append(np.array(batch_gts, dtype=np.float32))
         return
@@ -204,12 +213,14 @@ class ZodMetric(BaseMetric):
 
 def filter_on_range(instances, range_interval):
     filtered_instances = dict({})
+
     boxes_center = instances['bboxes_3d'].center.cpu().numpy()
     center_distances = np.sqrt(np.sum(boxes_center** 2, axis=1))
     filter_mask = np.all([center_distances > range_interval[0], center_distances < range_interval[1]], axis=0)
     
     for key in instances.keys():
-        filtered_instances[key] = (instances[key][filter_mask])
+        if instances.get(key) is not None:
+            filtered_instances[key] = (instances[key][filter_mask])
     
     return filtered_instances
 
