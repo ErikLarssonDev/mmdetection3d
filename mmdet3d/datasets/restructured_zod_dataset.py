@@ -31,9 +31,9 @@ class ZodDatasetRestruct(Det3DDataset):
         self.printed = False
     METAINFO = {
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
-        'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192), (60, 255, 60)],
+        'palette': [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)],
         'allClasses': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
-        'object_range': [-25, 0, -5, 25, 250, 3]
+        'object_range': [-25, 0, -5, 25, 250, 3] # TODO: Remove filtering of points
     }
 
     def parse_ann_info(self, info):
