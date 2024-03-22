@@ -22,9 +22,6 @@ CLASS_NAME_TO_ID = {
 COLORS = np.array(((255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)))
 
 def get_frame(frame_id):
-    #     self.data_path = os.path.join(root)
-    # self.lidar_path = os.path.join(self.data_path, "points/")
-    # self.label_path = os.path.join(self.data_path, "labels/")
     lidar_file = ROOT_DIR + '/points/' + frame_id + '.bin'
     label_file = ROOT_DIR + '/labels/'+ frame_id + '.txt'
     lines = [line.rstrip() for line in open(label_file)]
@@ -38,7 +35,7 @@ def get_frame(frame_id):
     return points, targets, frame_id
 
 if __name__ == '__main__':
-    points, targets, frame_id = get_frame('099233') # Change this line to the function you want to run
+    points, targets, frame_id = get_frame('021988') # Change this line to the function you want to run
     
     visualizer = Det3DLocalVisualizer()
     # set point cloud in visualizer
