@@ -28,7 +28,7 @@ class_translation_map = {
 
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
-    def __init__(self, frames_before=2, frames_after=0, *args, **kwargs):
+    def __init__(self, frames_before=2, frames_after=0, *args, **kwargs): # Number of frames to include before and after the current frame
         super().__init__(*args, **kwargs)
         self.frames_before = frames_before
         self.frames_after = frames_after
@@ -122,7 +122,7 @@ class ZodDatasetRestruct(Det3DDataset):
         
         saved_lidar_path = input_dict['lidar_points']["lidar_path"]
         for frame_before_index in range(self.frames_before):
-            input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f".bin")
+            input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")
             example['inputs']['points'] = torch.cat((example['inputs']['points'], self.pipeline(input_dict)['inputs']['points']),0) # Add points from previous frames
         for frame_after_index in range(self.frames_after):
             input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_a{frame_after_index+1}.bin")
