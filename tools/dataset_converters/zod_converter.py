@@ -142,6 +142,7 @@ def create_zod_info_file(data_path,
     filename = save_path / f'{pkl_prefix}_infos_train.pkl'
     print(f'Train file is saved to {filename}')
     mmengine.dump(kitti_infos_train, filename)
+
     kitti_infos_val = get_zod_image_info(
         data_path,
         image_ids=val_img_ids,
@@ -153,6 +154,10 @@ def create_zod_info_file(data_path,
     filename = save_path / f'{pkl_prefix}_infos_trainval.pkl'
     print(f'Trainval info file is saved to {filename}')
     mmengine.dump(kitti_infos_train + kitti_infos_val, filename)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7a2a2fae86957fc7fec6ef078d75439596fcb808
     kitti_infos_test = get_zod_image_info(
         data_path,
         image_ids=test_img_ids,

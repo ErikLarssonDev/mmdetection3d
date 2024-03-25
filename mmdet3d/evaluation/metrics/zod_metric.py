@@ -20,6 +20,14 @@ from mmdet3d.structures import (Box3DMode, CameraInstance3DBoxes,
 import wandb
 
 
+SAVE_PREDS_TO_FILE = False
+PREDS_SAVE_DIR = "/mmdetection3d/saved_preds"
+if SAVE_PREDS_TO_FILE:
+    # Array on format [[[label, x, y, z, w, l, h, yaw]]]
+    preds_to_save = []
+    gts_to_save = []
+
+
 @METRICS.register_module()
 class ZodMetric(BaseMetric):
     """Kitti evaluation metric.
@@ -160,13 +168,18 @@ class ZodMetric(BaseMetric):
             data_samples (Sequence[dict]): A batch of outputs from
                 the model.
         """
-        gt_batch = data_batch["data_samples"]
-        for pred_sample, gt_frame in zip(data_samples, gt_batch):
 
+        gt_batch = data_batch["data_samples"]
+        # Array on format [[label, x, y, z, w, l, h, yaw]]
+        batch_preds = []
+        batch_gts = []
+
+        
+        for pred_sample, gt_frame in zip(data_samples, gt_batch):
             gt_annotation = gt_frame.eval_ann_info
             result = dict()
             # Try to get gt_bboxes_labels, if it does not exist, get gt_labels_3d
-            labels_3d = gt_annotation.get("gt_bboxes_labels", gt_annotation["gt_labels_3d"])
+            labels_3d = gt_annotation.get("gt_bboxes_labels")
 
             
             gt_3d = dict(
@@ -180,6 +193,21 @@ class ZodMetric(BaseMetric):
             result['sample_idx'] = pred_sample['sample_idx']
             self.results.append(result)
             
+            if SAVE_PREDS_TO_FILE:
+                if gt_3d['labels_3d'] is not None:
+                    for cls, bboxes in zip(gt_3d['labels_3d'], gt_3d['bboxes_3d']):
+                        batch_gts.append(np.array([float(cls.item())] + bboxes.cpu().tolist()))
+                else: 
+                    print("Didnt get any gts for sample idx: ", result['sample_idx'] )
+                    batch_gts.append(np.array([]))
+                if result['pred_instances_3d']['labels_3d'] is not None:
+                    for cls, bboxes in zip(result['pred_instances_3d']['labels_3d'], result['pred_instances_3d']['bboxes_3d']):
+                        batch_preds.append(np.array([float(cls.item())] + bboxes.cpu().tolist()))
+                else:
+                    print("Didnt get any preds")
+                    batch_preds.append(np.array([]))
+        preds_to_save.append(np.array(batch_preds))
+        gts_to_save.append(np.array(batch_gts, dtype=np.float32))
         return
     
     def evaluate(self, results: List[dict]) -> Dict:
@@ -218,17 +246,26 @@ class ZodMetric(BaseMetric):
             with open(osp.join(save_dir, 'eval_metrics.json'), 'a') as f:
                 f.write(f"{json.dumps(serializable_metrics)} \n")
 
+        if SAVE_PREDS_TO_FILE:
+            # save preds to .npy file
+            preds_save_path = osp.join(PREDS_SAVE_DIR, "predictions.npy")
+            gts_save_path = osp.join(PREDS_SAVE_DIR, "ground_truths.npy")
+            np.savez(gts_save_path, *gts_to_save)
+            np.savez(preds_save_path, *preds_to_save)
+
         return metrics
     
 
 def filter_on_range(instances, range_interval):
     filtered_instances = dict({})
+
     boxes_center = instances['bboxes_3d'].center.cpu().numpy()
     center_distances = np.sqrt(np.sum(boxes_center** 2, axis=1))
     filter_mask = np.all([center_distances > range_interval[0], center_distances < range_interval[1]], axis=0)
     
     for key in instances.keys():
-        filtered_instances[key] = (instances[key][filter_mask])
+        if instances.get(key) is not None:
+            filtered_instances[key] = (instances[key][filter_mask])
     
     return filtered_instances
 
@@ -259,7 +296,7 @@ def eval_image(gt_annos,
     if not len(dt_annos['bboxes_3d']) == 0:
         dt_boxes = np.concatenate([annot[np.newaxis, ...] for annot in dt_annos['bboxes_3d'].cpu()])
         dt_labels = np.hstack([annot for annot in dt_annos['labels_3d']])
-        dt_scores = np.hstack([annot for annot in dt_annos['scores_3d']]) # TODO if this is the class score or the object score, make certain that it is the score for the predicted class 
+        dt_scores = np.hstack([annot for annot in dt_annos['scores_3d']]) # TODO if this is the class score or the object score, make certain that it is the score for the predicted class
         for i, name in enumerate(classes):
             dt_per_class[i] = np.sum(dt_labels == i)
 
@@ -461,7 +498,7 @@ def compute_statistics_jit_old(overlaps,
                 continue
             overlap = overlaps[j, i]
             dt_score = dt_scores[j]
-            if (not compute_fp and (overlap > min_overlap) # 
+            if (not compute_fp and (overlap > min_overlap)
                     and dt_score > valid_detection):
                 det_idx = j
                 valid_detection = dt_score
