@@ -33,7 +33,7 @@ class ZodDatasetRestruct(Det3DDataset):
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
         'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192), (60, 255, 60)],
         'allClasses': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
-        'object_range': [-25, 0, -5, 25, 250, 3]
+        'object_range': [-25.04, 0, -5, 25.04, 245.12, 3]
     }
 
     def parse_ann_info(self, info):

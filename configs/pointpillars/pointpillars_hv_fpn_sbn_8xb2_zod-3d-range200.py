@@ -7,4 +7,11 @@ _base_ = [
 #   - `enable` means enable scaling LR automatically
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
+experiment_name = 'pointpillars_20e'
+
+work_dir = './work_dirs/' + experiment_name
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
 auto_scale_lr = dict(enable=False, base_batch_size=1)
+val_evaluator = dict(
+    metric_save_dir='./work_dirs/' + experiment_name,
+)

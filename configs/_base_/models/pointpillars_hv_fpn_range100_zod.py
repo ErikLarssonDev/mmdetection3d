@@ -11,7 +11,7 @@ model = dict(
         voxel=True,
         voxel_layer=dict(
             voxel_size=voxel_size,
-            max_num_points=16,      
+            max_num_points=100,      
             point_cloud_range=pcr_range,
             max_voxels=(60000, 60000))),
 

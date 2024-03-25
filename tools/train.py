@@ -10,6 +10,8 @@ from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
 
 from mmdet3d.utils import replace_ceph_backend
+import wandb
+
 
 
 def parse_args():
@@ -71,6 +73,8 @@ def main():
 
     # load config
     cfg = Config.fromfile(args.config)
+
+    wandb.init(project="exjobb", name=f"{cfg.experiment_name}", config=cfg)
 
     # TODO: We will unify the ceph support approach with other OpenMMLab repos
     if args.ceph:
