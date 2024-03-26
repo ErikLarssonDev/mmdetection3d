@@ -28,7 +28,7 @@ class_translation_map = {
 
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
-    def __init__(self, frames_before=2, frames_after=0, *args, **kwargs): # Number of frames to include before and after the current frame
+    def __init__(self, frames_before=1, frames_after=0, *args, **kwargs): # Number of frames to include before and after the current frame
         super().__init__(*args, **kwargs)
         self.frames_before = frames_before
         self.frames_after = frames_after
