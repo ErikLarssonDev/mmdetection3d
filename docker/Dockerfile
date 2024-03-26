@@ -44,6 +44,9 @@ RUN pip3 install torch torchvision torchaudio --index-url https://download.pytor
 RUN pip3 install openmim
 RUN mim install "mmengine" "mmcv>=2.0.0rc4" "mmdet>=3.0.0"
 
+RUN pip3 install --no-cache-dir -e .
+RUN pip3 install "zod[all]" wandb
+
 WORKDIR '/mmdetection3d'
 
 ENTRYPOINT ["/bin/bash"]
