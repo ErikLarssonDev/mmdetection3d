@@ -1,5 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import tempfile
+import os
+import json
 from os import path as osp
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
@@ -15,9 +17,10 @@ from mmdet3d.evaluation import kitti_eval, do_eval
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import (Box3DMode, CameraInstance3DBoxes,
                                 LiDARInstance3DBoxes, points_cam2img)
+import wandb
 
 
-SAVE_PREDS_TO_FILE = True
+SAVE_PREDS_TO_FILE = False
 PREDS_SAVE_DIR = "/mmdetection3d/saved_preds"
 if SAVE_PREDS_TO_FILE:
     # Array on format [[[label, x, y, z, w, l, h, yaw]]]
@@ -68,10 +71,12 @@ class ZodMetric(BaseMetric):
                  format_only: bool = False,
                  submission_prefix: Optional[str] = None,
                  collect_device: str = 'cpu',
-                 backend_args: Optional[dict] = None) -> None:
+                 backend_args: Optional[dict] = None,
+                 metric_save_dir = None) -> None:
         self.default_prefix = 'Kitti metric'
         super(ZodMetric, self).__init__(
             collect_device=collect_device, prefix=prefix)
+        self.metric_save_dir = metric_save_dir
         self.pcd_limit_range = pcd_limit_range
         self.ann_file = ann_file
         self.pklfile_prefix = pklfile_prefix
@@ -134,15 +139,22 @@ class ZodMetric(BaseMetric):
         precision = class_tps / (class_tps + class_fps + 1e-6) # 1e-6 to avoid division by zero
         recall = class_tps / (class_tps + class_fns + 1e-6) # 1e-6 to avoid division by zero
         # accuracy = class_tps / (total_preds + 1e-6) # TODO check if this is correct
-        ap = np.mean(precision, axis=0)
-        m_ap = np.mean(ap)
+        ap = np.mean(precision, axis=2)
+        ar = np.mean(recall, axis=2)
+        m_ap = np.mean(ap, axis=1)
+        m_ar = np.mean(ar, axis=1)
         return dict(
             precision=precision,
             recall=recall,
             ap=ap,
             map=m_ap,
+            ar=ar,
+            mar=m_ar,
             class_gts=class_gts,
             class_preds=class_preds,
+            tps=class_tps,
+            fps=class_fps,
+            fns=class_fns
         )
     
 
@@ -174,8 +186,6 @@ class ZodMetric(BaseMetric):
                 labels_3d = labels_3d,
                 bboxes_3d = gt_annotation["gt_bboxes_3d"]
                 )
-            # for attr_name in gt_3d:
-            #     gt_3d[attr_name] = gt_3d[attr_name].to('cpu')
             for attr_name in pred_sample['pred_instances_3d']:
                 pred_sample['pred_instances_3d'][attr_name] = pred_sample['pred_instances_3d'][attr_name].to('cpu')
             result['pred_instances_3d'] = pred_sample['pred_instances_3d']
@@ -200,15 +210,50 @@ class ZodMetric(BaseMetric):
         gts_to_save.append(np.array(batch_gts, dtype=np.float32))
         return
     
-    def evaluate(self, *args, **kwargs) -> Dict:
+    def evaluate(self, results: List[dict]) -> Dict:
+        metrics = super().evaluate(results)
+        print(f"Metrics returned from super().evaluate: {metrics}")
+        if self.metric_save_dir:
+            serializable_metrics = {}
+            # Ensure that the directory exists
+            os.makedirs(self.metric_save_dir, exist_ok=True)
+            # Find the directory in this directory that has the largest timestamp value, add the file to this directory
+            subdirs = [d for d in os.listdir(self.metric_save_dir) if osp.isdir(osp.join(self.metric_save_dir, d))]
+            latest_dir = max(subdirs, key=lambda d: int(d.replace("_","")) if d.replace("_","").isdigit() else 0)
+            save_dir = osp.join(self.metric_save_dir, latest_dir)
+            os.makedirs(save_dir, exist_ok=True)
+
+            for key in metrics.keys():
+                serializable_metrics[key] = metrics[key].tolist()
+                
+            wabdb_log = {
+                "val_mAP": serializable_metrics["Kitti metric/map"][0],
+                "val_mAR": serializable_metrics["Kitti metric/mar"][0],
+                "val_AP_Vehicle": serializable_metrics["Kitti metric/ap"][0][0],
+                "val_AP_Pedestrian": serializable_metrics["Kitti metric/ap"][1][0],
+                "val_AP_VulnerableVehicle": serializable_metrics["Kitti metric/ap"][2][0],
+                "val_AP_Animal": serializable_metrics["Kitti metric/ap"][3][0],
+                "val_AP_StaticObject": serializable_metrics["Kitti metric/ap"][4][0],
+                "val_AR_Vehicle": serializable_metrics["Kitti metric/ar"][0][0],
+                "val_AR_Pedestrian": serializable_metrics["Kitti metric/ar"][1][0],
+                "val_AR_VulnerableVehicle": serializable_metrics["Kitti metric/ar"][2][0],
+                "val_AR_Animal": serializable_metrics["Kitti metric/ar"][3][0],
+                "val_AR_StaticObject": serializable_metrics["Kitti metric/ar"][4][0],
+            }
+          
+            wandb.log(wabdb_log)
+
+            with open(osp.join(save_dir, 'eval_metrics.json'), 'a') as f:
+                f.write(f"{json.dumps(serializable_metrics)} \n")
+
         if SAVE_PREDS_TO_FILE:
             # save preds to .npy file
             preds_save_path = osp.join(PREDS_SAVE_DIR, "predictions.npy")
             gts_save_path = osp.join(PREDS_SAVE_DIR, "ground_truths.npy")
             np.savez(gts_save_path, *gts_to_save)
             np.savez(preds_save_path, *preds_to_save)
-        
-        return super().evaluate(*args, **kwargs)
+
+        return metrics
     
 
 def filter_on_range(instances, range_interval):

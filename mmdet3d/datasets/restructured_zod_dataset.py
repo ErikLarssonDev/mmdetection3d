@@ -38,9 +38,9 @@ class ZodDatasetRestruct(Det3DDataset):
 
     METAINFO = {
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
-        'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192), (60, 255, 60)],
+        'palette': [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)],
         'allClasses': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'PoleObject', 'TrafficBeacon', 'TrafficSign', 'TrafficSignal', 'TrafficGuide', 'DynamicBarrier', 'Unclear'],
-        'object_range': [-25, 0, -5, 25, 250, 3]
+        'object_range': [-25.04, 0, -5, 25.04, 245.12, 3] 
     }
 
     def parse_ann_info(self, info):
@@ -125,7 +125,7 @@ class ZodDatasetRestruct(Det3DDataset):
         
         saved_lidar_path = input_dict['lidar_points']["lidar_path"]
         for frame_before_index in range(self.frames_before):
-            input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f".bin")
+            input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")
             example['inputs']['points'] = torch.cat((example['inputs']['points'], self.pipeline(input_dict)['inputs']['points']),0) # Add points from previous frames
         for frame_after_index in range(self.frames_after):
             input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_a{frame_after_index+1}.bin")

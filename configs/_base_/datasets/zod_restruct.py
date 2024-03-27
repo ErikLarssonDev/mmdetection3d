@@ -2,7 +2,7 @@
 dataset_type = 'ZodDatasetRestruct'
 data_root = 'bigzod/' # 
 class_names = ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject']  # replace with your dataset class
-point_cloud_range = [-25, 0, -5, 25, 250, 3] # adjust according to your dataset [-25, 0, -5, 25, 245, 3]
+point_cloud_range = [-25.04, 0, -5, 25.04, 245.12, 3] # adjust according to your dataset [-25, 0, -5, 25, 245, 3]
 input_modality = dict(use_lidar=True, use_camera=False)
 metainfo = dict(classes=class_names)
 
@@ -17,20 +17,20 @@ train_pipeline = [
         with_bbox_3d=True,
         with_label_3d=True,
         ),
-    # dict(
-    #     type='ObjectNoise',
-    #     num_try=100,
-    #     translation_std=[1.0, 1.0, 0.5],
-    #     global_rot_range=[0.0, 0.0],
-    #     rot_range=[-0.78539816, 0.78539816]),
-    # dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
-    # dict(
-    #     type='GlobalRotScaleTrans',
-    #     rot_range=[-0.78539816, 0.78539816],
-    #     scale_ratio_range=[0.95, 1.05]),
+    dict(
+        type='ObjectNoise',
+        num_try=100,
+        translation_std=[1.0, 1.0, 0.5],
+        global_rot_range=[0.0, 0.0],
+        rot_range=[-0.78539816, 0.78539816]),
+    dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
+    dict(
+        type='GlobalRotScaleTrans',
+        rot_range=[-0.78539816, 0.78539816],
+        scale_ratio_range=[0.95, 1.05]),
     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
-    # dict(type='PointShuffle'),
+    dict(type='PointShuffle'),
     dict(
         type='Pack3DDetInputs',
         keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
@@ -90,7 +90,7 @@ val_dataloader = dict(
         box_type_3d='LiDAR'))
 val_evaluator = dict(
     type='ZodMetric',
-    ann_file=data_root + 'minizod_infos_val.pkl',  # specify your validation pkl info TODO: Change to val
+    ann_file=data_root + 'minizod_infos_val.pkl', 
     metric='bbox')
 
 
@@ -104,7 +104,7 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_prefix=dict(pts='points'),
-        ann_file='minizod_infos_val.pkl',
+        ann_file='minizod_infos_test.pkl',
         pipeline=test_pipeline,
         modality=input_modality,
         test_mode=True,
@@ -112,7 +112,7 @@ test_dataloader = dict(
         box_type_3d='LiDAR'))
 test_evaluator = dict(
     type='ZodMetric',
-    ann_file=data_root + 'minizod_infos_val.pkl',  # specify your validation pkl info TODO: Change to val
+    ann_file=data_root + 'minizod_infos_test.pkl',  
     metric='bbox')
 
 vis_backends = [dict(type='LocalVisBackend')]

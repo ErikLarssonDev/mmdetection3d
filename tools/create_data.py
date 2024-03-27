@@ -15,10 +15,12 @@ from tools.dataset_converters.create_gt_database import (
 from tools.dataset_converters.update_infos_to_v2 import update_pkl_infos
 
 
+
 def zod_data_prep(root_path,
                   extra_tag,
-                  save_path):
-    zod.create_zod_info_file(root_path, extra_tag, save_path, relative_path=False)
+                  save_path,
+                  num_prev_frames=0):
+    zod.create_zod_info_file(root_path, extra_tag, save_path, relative_path=False, num_prev_frames=num_prev_frames)
     update_pkl_infos('custom',out_dir=save_path, pkl_path=osp.join(save_path, f'{extra_tag}_infos_train.pkl'))
     update_pkl_infos('custom',out_dir=save_path, pkl_path=osp.join(save_path, f'{extra_tag}_infos_val.pkl'))
     update_pkl_infos('custom',out_dir=save_path, pkl_path=osp.join(save_path, f'{extra_tag}_infos_test.pkl'))
@@ -321,6 +323,12 @@ parser.add_argument(
     action='store_true',
     help='''Whether to skip saving image and lidar.
         Only used when dataset is Waymo!''')
+parser.add_argument(
+    "--num-prev-frames",
+    type=int,
+    default=0,
+    help="Number of previous (already coordinate adjusted) frames to use when calculating number of points in gt"
+)
 args = parser.parse_args()
 
 if __name__ == '__main__':
@@ -430,6 +438,7 @@ if __name__ == '__main__':
             root_path=args.root_path,
             extra_tag=args.extra_tag,
             save_path=args.out_dir,
+            num_prev_frames=args.num_prev_frames
         )
     else:
         raise NotImplementedError(f'Don\'t support {args.dataset} dataset.')

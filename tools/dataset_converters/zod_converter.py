@@ -70,7 +70,8 @@ def _calculate_num_points_in_gt(data_path,
                                 infos,
                                 relative_path,
                                 remove_outside=True,
-                                num_features=4):
+                                num_features=4,
+                                num_previous_frames=0):
     for info in mmengine.track_iter_progress(infos):
         pc_info = info['point_cloud']
         if relative_path:
@@ -79,6 +80,12 @@ def _calculate_num_points_in_gt(data_path,
             v_path = pc_info['velodyne_path']
         points_v = np.fromfile(
             v_path, dtype=np.float32, count=-1).reshape([-1, num_features])
+        for i in range(num_previous_frames):
+            prev_v_path = v_path.replace('.bin', f'_b{i+1}.bin')
+            if os.path.exists(prev_v_path):
+                prev_points_v = np.fromfile(
+                    prev_v_path, dtype=np.float32, count=-1).reshape([-1, num_features])
+                points_v = np.concatenate([prev_points_v, points_v], axis=0)
 
         # points_v = points_v[points_v[:, 0] > 0]
         annos = info['annos']
@@ -100,7 +107,8 @@ def _calculate_num_points_in_gt(data_path,
 def create_zod_info_file(data_path,
                            pkl_prefix='zod',
                            save_path=None,
-                           relative_path=True):
+                           relative_path=True,
+                           num_prev_frames=0):
     """Create info file of custom dataset.
 
     Given the raw data, generate its related info file in pkl format.
@@ -130,7 +138,7 @@ def create_zod_info_file(data_path,
         data_path,
         image_ids=train_img_ids,
         label_info=True)
-    _calculate_num_points_in_gt(data_path, kitti_infos_train, relative_path)
+    _calculate_num_points_in_gt(data_path, kitti_infos_train, relative_path, num_previous_frames=num_prev_frames)
     filename = save_path / f'{pkl_prefix}_infos_train.pkl'
     print(f'Train file is saved to {filename}')
     mmengine.dump(kitti_infos_train, filename)
@@ -146,7 +154,6 @@ def create_zod_info_file(data_path,
     filename = save_path / f'{pkl_prefix}_infos_trainval.pkl'
     print(f'Trainval info file is saved to {filename}')
     mmengine.dump(kitti_infos_train + kitti_infos_val, filename)
-
     kitti_infos_test = get_zod_image_info(
         data_path,
         image_ids=test_img_ids,
