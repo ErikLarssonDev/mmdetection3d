@@ -39,3 +39,6 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fp
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dirs/{LOCATION_OF_MODEL}/{MODEL_NAME.py} work_dirs/{LOCATION_OF_MODEL}/epoch_X.pth
 ```
+
+# To run with point time feature
+You need to change the global variable "USE_POINT_TIME_FEATURE" to true in the dataset class, and change the in channels of the voxel encoder on your main config file to the total number of point features.
