@@ -26,6 +26,8 @@ python3 tools/create_data.py custom --root-path /media/erila/Passport/zod_mmdet3
 # Train model example
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py
+
+PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/dynamic_voxelization_zod.py
 ```
 
 # Evaluate model example
