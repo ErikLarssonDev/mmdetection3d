@@ -10,7 +10,9 @@ import torch
 
 currentmaxpoint = [0, 0, 0]
 currentminpoint = [100, 100, 100]
-
+NUM_FRAMES_BEFORE = 2
+NUM_FRAMES_AFTER = 0
+USE_FRAME_TIME_FEATURE = False
 
 class_translation_map = { 
     "Vehicle": "Vehicle",
@@ -28,10 +30,11 @@ class_translation_map = {
 
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
-    def __init__(self, frames_before=2, frames_after=0, *args, **kwargs):
+    def __init__(self, frames_before=NUM_FRAMES_BEFORE, frames_after=NUM_FRAMES_AFTER, use_frame_time_feature = USE_FRAME_TIME_FEATURE, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.frames_before = frames_before
         self.frames_after = frames_after
+        self.use_frame_time_feature = use_frame_time_feature
 
     METAINFO = {
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
