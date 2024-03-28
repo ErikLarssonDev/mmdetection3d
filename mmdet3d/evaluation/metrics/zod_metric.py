@@ -212,7 +212,6 @@ class ZodMetric(BaseMetric):
     
     def evaluate(self, results: List[dict]) -> Dict:
         metrics = super().evaluate(results)
-        print(f"Metrics returned from super().evaluate: {metrics}")
         if self.metric_save_dir:
             serializable_metrics = {}
             # Ensure that the directory exists
@@ -230,22 +229,19 @@ class ZodMetric(BaseMetric):
                 "val_mAP": serializable_metrics["Kitti metric/map"][0],
                 "val_mAR": serializable_metrics["Kitti metric/mar"][0],
                 "val_AP_Vehicle": serializable_metrics["Kitti metric/ap"][0][0],
-                "val_AP_Pedestrian": serializable_metrics["Kitti metric/ap"][1][0],
-                "val_AP_VulnerableVehicle": serializable_metrics["Kitti metric/ap"][2][0],
-                "val_AP_Animal": serializable_metrics["Kitti metric/ap"][3][0],
-                "val_AP_StaticObject": serializable_metrics["Kitti metric/ap"][4][0],
+                "val_AP_Pedestrian": serializable_metrics["Kitti metric/ap"][0][1],
+                "val_AP_VulnerableVehicle": serializable_metrics["Kitti metric/ap"][0][2],
+                "val_AP_Animal": serializable_metrics["Kitti metric/ap"][0][3],
+                "val_AP_StaticObject": serializable_metrics["Kitti metric/ap"][0][4],
                 "val_AR_Vehicle": serializable_metrics["Kitti metric/ar"][0][0],
-                "val_AR_Pedestrian": serializable_metrics["Kitti metric/ar"][1][0],
-                "val_AR_VulnerableVehicle": serializable_metrics["Kitti metric/ar"][2][0],
-                "val_AR_Animal": serializable_metrics["Kitti metric/ar"][3][0],
-                "val_AR_StaticObject": serializable_metrics["Kitti metric/ar"][4][0],
-            }
-
-            test_log = {
+                "val_AR_Pedestrian": serializable_metrics["Kitti metric/ar"][0][1],
+                "val_AR_VulnerableVehicle": serializable_metrics["Kitti metric/ar"][0][2],
+                "val_AR_Animal": serializable_metrics["Kitti metric/ar"][0][3],
+                "val_AR_StaticObject": serializable_metrics["Kitti metric/ar"][0][4],
                 "running": 1
             }
           
-            wandb.log(test_log) # TODO: Fix the logging
+            wandb.log(wabdb_log)
 
             with open(osp.join(save_dir, 'eval_metrics.json'), 'a') as f:
                 f.write(f"{json.dumps(serializable_metrics)} \n")
