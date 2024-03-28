@@ -44,3 +44,12 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dir
 
 # To run with point time feature
 You need to change the global variable "USE_POINT_TIME_FEATURE" to true in the dataset class, and change the in channels of the voxel encoder on your main config file to the total number of point features.
+
+mmdet3d/datasets/restructured_zod_dataset.py
+You need to change the global variable "USE_POINT_TIME_FEATURE" to true in the dataset class
+
+configs/pointpillars/dynamic_voxelization_zod.py
+Change the in channels of the voxel encoder on your main config file to the total number of point features.
+
+configs/_base_/datasets/zod_restruct.py
+Do we need to change this as well?
