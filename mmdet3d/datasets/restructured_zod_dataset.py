@@ -13,6 +13,8 @@ currentminpoint = [100, 100, 100]
 NUM_FRAMES_BEFORE = 2
 NUM_FRAMES_AFTER = 0
 USE_FRAME_TIME_FEATURE = True
+NUM_BEFORE_FRAMES_BOUNDS = [[0, 300], [50, 300], [100, 300]]
+
 
 class_translation_map = { 
     "Vehicle": "Vehicle",
@@ -129,9 +131,9 @@ class ZodDatasetRestruct(Det3DDataset):
             # RuntimeError: Sizes of tensors must match except in dimension 0. Expected size 5 but got size 4 for tensor number 1 in the list.
             
             
-        for frame_before_index in range(self.frames_before):
+        for frame_before_index, point_distance_interval in zip(range(self.frames_before), NUM_BEFORE_FRAMES_BOUNDS):
             input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")
-            new_points = self.pipeline(input_dict)['inputs']['points']
+            new_points = self.filter_points_on_absolute_distance(self.pipeline(input_dict)['inputs']['points'], point_distance_interval[1], point_distance_interval[0])
             if self.use_frame_time_feature:
                 new_points = torch.cat((new_points, torch.ones_like(new_points[:,0:1]) * (frame_before_index+1)),1)
             example['inputs']['points'] = torch.cat((example['inputs']['points'], new_points),0) # Add points from previous frames
@@ -142,6 +144,8 @@ class ZodDatasetRestruct(Det3DDataset):
             if self.use_frame_time_feature:
                 new_points = torch.cat((new_points, torch.ones_like(new_points[:,0:1]) * -1* (frame_before_index+1)),1)
             example['inputs']['points'] = torch.cat((example['inputs']['points'], new_points),0) # Add points from future frames
+        
+        print(f"Number of points in example: {example['inputs']['points'].shape[0]}")
 
         if not self.test_mode and self.filter_empty_gt:
             # after pipeline drop the example with empty annotations
@@ -175,4 +179,10 @@ class ZodDatasetRestruct(Det3DDataset):
                 filtered_annotations[key] = ann_info[key]
 
         return filtered_annotations
+    
+    def filter_points_on_absolute_distance(self, points, upper_bound, lower_bound): 
+        abs_distances = np.linalg.norm(points[:,0:3], axis=1)
+        mask = np.all([abs_distances > lower_bound, abs_distances < upper_bound], axis=0)
+        return points[mask]
+    
         
