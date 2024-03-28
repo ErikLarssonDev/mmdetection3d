@@ -6,13 +6,14 @@ from .det3d_dataset import Det3DDataset
 import numpy as np
 import copy
 import torch
+import wandb
 
 
 currentmaxpoint = [0, 0, 0]
 currentminpoint = [100, 100, 100]
-NUM_FRAMES_BEFORE = 2
+NUM_FRAMES_BEFORE = 1
 NUM_FRAMES_AFTER = 0
-USE_FRAME_TIME_FEATURE = True
+USE_FRAME_TIME_FEATURE = True # TODO: These hyper parameters should be saved with wandb
 NUM_BEFORE_FRAMES_BOUNDS = [[0, 300], [50, 300], [100, 300]]
 
 

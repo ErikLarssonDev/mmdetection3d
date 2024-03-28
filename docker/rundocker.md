@@ -4,7 +4,7 @@ docker build -t mmdetection3d-image -f /home/erila/forks/mmdetection3d/docker/Do
 
 
 ```shell
-docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/media/erila/KINGSTON/zod_mmdet3d:/mmdetection3d/bigzod"  --name "mmdetection3d-container" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection3d-image
+docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/home/student/minizod:/mmdetection3d/minizod" -v"/home/student/bigzod_mmdet3d:/mmdetection3d/bigzod"  --name "mmdetection3d-container-2" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection3d-image
 ```
 
 once inside the container run
@@ -26,6 +26,8 @@ python3 tools/create_data.py custom --root-path /media/erila/Passport/zod_mmdet3
 # Train model example
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py
+
+PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/dynamic_voxelization_zod.py
 ```
 
 # Evaluate model example
@@ -42,3 +44,12 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dir
 
 # To run with point time feature
 You need to change the global variable "USE_POINT_TIME_FEATURE" to true in the dataset class, and change the in channels of the voxel encoder on your main config file to the total number of point features.
+
+mmdet3d/datasets/restructured_zod_dataset.py
+You need to change the global variable "USE_POINT_TIME_FEATURE" to true in the dataset class
+
+configs/pointpillars/dynamic_voxelization_zod.py
+Change the in channels of the voxel encoder on your main config file to the total number of point features.
+
+configs/_base_/datasets/zod_restruct.py
+Do we need to change this as well?
