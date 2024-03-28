@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'ZodDatasetRestruct'
-data_root = 'bigzod/' # 
+data_root = 'minizod/' # 
 class_names = ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject']  # replace with your dataset class
 point_cloud_range = [-25.04, 0, -5, 25.04, 245.12, 3] # adjust according to your dataset [-25, 0, -5, 25, 245, 3]
 input_modality = dict(use_lidar=True, use_camera=False)

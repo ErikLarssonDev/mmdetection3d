@@ -206,8 +206,8 @@ class ZodMetric(BaseMetric):
                 else:
                     print("Didnt get any preds")
                     batch_preds.append(np.array([]))
-        preds_to_save.append(np.array(batch_preds))
-        gts_to_save.append(np.array(batch_gts, dtype=np.float32))
+                preds_to_save.append(np.array(batch_preds))
+                gts_to_save.append(np.array(batch_gts, dtype=np.float32))
         return
     
     def evaluate(self, results: List[dict]) -> Dict:
@@ -240,8 +240,12 @@ class ZodMetric(BaseMetric):
                 "val_AR_Animal": serializable_metrics["Kitti metric/ar"][3][0],
                 "val_AR_StaticObject": serializable_metrics["Kitti metric/ar"][4][0],
             }
+
+            test_log = {
+                "running": 1
+            }
           
-            wandb.log(wabdb_log)
+            wandb.log(test_log) # TODO: Fix the logging
 
             with open(osp.join(save_dir, 'eval_metrics.json'), 'a') as f:
                 f.write(f"{json.dumps(serializable_metrics)} \n")

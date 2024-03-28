@@ -1,5 +1,5 @@
 ```shell
-docker build -t mmdetection3d-image -f /home/student/forks/mmdetection3d/docker/Dockerfile .
+docker build -t mmdetection3d-image -f /home/erila/forks/mmdetection3d/docker/Dockerfile .
 ```
 
 
@@ -12,19 +12,22 @@ once inside the container run
 # apt-get install -y ffmpeg libglib2.0-0 libsm6 libxrender-dev libxext6  
 # mim install "mmengine" "mmcv>=2.0.0rc4" "mmdet>=3.0.0"
 pip3 install --no-cache-dir -e .
-pip3 install "zod[all]"
-pip3 install wandb
+pip3 install "zod[all]" wandb
 ```
 
 # create dataset infos
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/create_data.py custom --root-path ./minizod/ --out-dir ./minizod/ --extra-tag minizod
+
+python3 tools/create_data.py custom --root-path /media/erila/Passport/zod_mmdet3d/ --out-dir /media/erila/Passport/zod_mmdet3d/ --extra-tag zod_b1 --num-prev-frames 1
 ```
 //  docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "C\\Skola\exjobb\minizod_mmdet3d:/mmdetection3d/minizod"   --name "mmdetection3d-container"  mmdetection3d-image 
 
 # Train model example
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py
+
+PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/dynamic_voxelization_zod.py
 ```
 
 # Evaluate model example
@@ -38,3 +41,6 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fp
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dirs/{LOCATION_OF_MODEL}/{MODEL_NAME.py} work_dirs/{LOCATION_OF_MODEL}/epoch_X.pth
 ```
+
+# To run with point time feature
+You need to change the global variable "USE_POINT_TIME_FEATURE" to true in the dataset class, and change the in channels of the voxel encoder on your main config file to the total number of point features.

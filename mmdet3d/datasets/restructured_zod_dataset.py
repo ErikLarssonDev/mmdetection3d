@@ -10,7 +10,9 @@ import torch
 
 currentmaxpoint = [0, 0, 0]
 currentminpoint = [100, 100, 100]
-
+NUM_FRAMES_BEFORE = 2
+NUM_FRAMES_AFTER = 0
+USE_FRAME_TIME_FEATURE = True
 
 class_translation_map = { 
     "Vehicle": "Vehicle",
@@ -28,10 +30,11 @@ class_translation_map = {
 
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
-    def __init__(self, frames_before=2, frames_after=0, *args, **kwargs): # Number of frames to include before and after the current frame
+    def __init__(self, frames_before=NUM_FRAMES_BEFORE, frames_after=NUM_FRAMES_AFTER, use_frame_time_feature = USE_FRAME_TIME_FEATURE, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.frames_before = frames_before
         self.frames_after = frames_after
+        self.use_frame_time_feature = use_frame_time_feature
 
     METAINFO = {
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
@@ -121,12 +124,25 @@ class ZodDatasetRestruct(Det3DDataset):
         example = self.pipeline(input_dict)
         
         saved_lidar_path = input_dict['lidar_points']["lidar_path"]
+        if self.use_frame_time_feature:
+            example['inputs']['points'] = torch.cat((example['inputs']['points'], torch.zeros_like(example['inputs']['points'][:,0:1])),1)
+            # RuntimeError: Sizes of tensors must match except in dimension 0. Expected size 5 but got size 4 for tensor number 1 in the list.
+            
+            
         for frame_before_index in range(self.frames_before):
             input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")
-            example['inputs']['points'] = torch.cat((example['inputs']['points'], self.pipeline(input_dict)['inputs']['points']),0) # Add points from previous frames
+            new_points = self.pipeline(input_dict)['inputs']['points']
+            if self.use_frame_time_feature:
+                new_points = torch.cat((new_points, torch.ones_like(new_points[:,0:1]) * (frame_before_index+1)),1)
+            example['inputs']['points'] = torch.cat((example['inputs']['points'], new_points),0) # Add points from previous frames
+
         for frame_after_index in range(self.frames_after):
             input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_a{frame_after_index+1}.bin")
-            example['inputs']['points'] = torch.cat((example['inputs']['points'], self.pipeline(input_dict)['inputs']['points']),0) # Add points from future frames
+            new_points = self.pipeline(input_dict)['inputs']['points']
+            if self.use_frame_time_feature:
+                new_points = torch.cat((new_points, torch.ones_like(new_points[:,0:1]) * -1* (frame_before_index+1)),1)
+            example['inputs']['points'] = torch.cat((example['inputs']['points'], new_points),0) # Add points from future frames
+
         if not self.test_mode and self.filter_empty_gt:
             # after pipeline drop the example with empty annotations
             # return None to random another in `__getitem__`
