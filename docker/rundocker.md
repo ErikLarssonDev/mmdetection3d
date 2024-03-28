@@ -4,7 +4,7 @@ docker build -t mmdetection3d-image -f /home/student/forks/mmdetection3d/docker/
 
 
 ```shell
-docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/home/student/minizod_mmdet3d:/mmdetection3d/minizod" -v"/home/student/bigzod_mmdet3d:/mmdetection3d/bigzod"  --name "mmdetection3d-container" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection3d-image
+docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/home/student/minizod:/mmdetection3d/minizod" -v"/home/student/bigzod_mmdet3d:/mmdetection3d/bigzod"  --name "mmdetection3d-container-2" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection3d-image
 ```
 
 once inside the container run
@@ -13,6 +13,7 @@ once inside the container run
 # mim install "mmengine" "mmcv>=2.0.0rc4" "mmdet>=3.0.0"
 pip3 install --no-cache-dir -e .
 pip3 install "zod[all]"
+pip3 install wandb
 ```
 
 # create dataset infos
