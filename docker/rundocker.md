@@ -1,10 +1,10 @@
 ```shell
-docker build -t mmdetection3d-image -f /home/student/forks/mmdetection3d/docker/Dockerfile .
+docker build -t mmdetection3d-image -f /home/erila/forks/mmdetection3d/docker/Dockerfile .
 ```
 
 
 ```shell
-docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/home/student/minizod_mmdet3d:/mmdetection3d/minizod" -v"/media/dataSsd/zod_mmdet3d:/mmdetection3d/bigzod" -v "/home/student/lidar-thesis/saved_models:/mmdetection3d/saved_models" --name "mmdetection3d-container-2" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection-image
+docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/home/student/minizod_mmdet3d:/mmdetection3d/minizod" -v"/home/student/bigzod_mmdet3d:/mmdetection3d/bigzod"  --name "mmdetection3d-container" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection3d-image
 ```
 
 once inside the container run
@@ -12,18 +12,22 @@ once inside the container run
 # apt-get install -y ffmpeg libglib2.0-0 libsm6 libxrender-dev libxext6  
 # mim install "mmengine" "mmcv>=2.0.0rc4" "mmdet>=3.0.0"
 pip3 install --no-cache-dir -e .
-pip3 install "zod[all]"
+pip3 install "zod[all]" wandb
 ```
 
 # create dataset infos
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/create_data.py custom --root-path ./minizod/ --out-dir ./minizod/ --extra-tag minizod
+
+python3 tools/create_data.py custom --root-path /media/erila/Passport/zod_mmdet3d/ --out-dir /media/erila/Passport/zod_mmdet3d/ --extra-tag zod_b1 --num-prev-frames 1
 ```
 //  docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "C\\Skola\exjobb\minizod_mmdet3d:/mmdetection3d/minizod"   --name "mmdetection3d-container"  mmdetection3d-image 
 
 # Train model example
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py
+
+PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/dynamic_voxelization_zod.py
 ```
 
 # Evaluate model example

@@ -18,3 +18,9 @@ auto_scale_lr = dict(enable=False, base_batch_size=1)
 val_evaluator = dict(
     metric_save_dir='./work_dirs/' + experiment_name,
 )
+
+model = dict(
+    voxel_encoder=dict(
+        in_channels=5, # Change this when adding more point features
+    )
+)
