@@ -4,7 +4,7 @@ docker build -t mmdetection3d-image -f /home/student/forks/mmdetection3d/docker/
 
 
 ```shell
-docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/home/student/minizod_mmdet3d:/mmdetection3d/minizod" -v"/home/student/bigzod_mmdet3d:/mmdetection3d/bigzod"  --name "mmdetection3d-container" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection3d-image
+docker run -it   --gpus 'all'   -v "${PWD}:/mmdetection3d" -v "/home/student/minizod_mmdet3d:/mmdetection3d/minizod" -v"/media/dataSsd/zod_mmdet3d:/mmdetection3d/bigzod" -v "/home/student/lidar-thesis/saved_models:/mmdetection3d/saved_models" --name "mmdetection3d-container-2" --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw"  mmdetection-image
 ```
 
 once inside the container run
@@ -36,4 +36,7 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fp
 # Benchmark inference time example 
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dirs/{LOCATION_OF_MODEL}/{MODEL_NAME.py} work_dirs/{LOCATION_OF_MODEL}/epoch_X.pth
+
+python3 tools/analysis_tools/benchmark.py saved_models/dynamic_voxelization_20e/dynamic_voxelization_zod.py saved_models/dynamic_voxelization_20e/epoch_20.pth
+
 ```
