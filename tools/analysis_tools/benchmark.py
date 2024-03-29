@@ -12,6 +12,7 @@ from mmdet3d.registry import MODELS
 from tools.misc.fuse_conv_bn import fuse_module
 from codecarbon import EmissionsTracker
 import numpy as np
+import wandb
 
 # import torch_tensorrt
 
@@ -22,7 +23,7 @@ def parse_args():
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument('--samples', default=10023, help='samples to benchmark')
     parser.add_argument(
-        '--log-interval', default=50, help='interval of logging')
+        '--log-interval', default=1, help='interval of logging')
     parser.add_argument(
         '--amp',
         action='store_true',
@@ -42,6 +43,7 @@ def main():
     tracker = EmissionsTracker(log_level='error', save_to_file=False)
     # build config and set cudnn_benchmark
     cfg = Config.fromfile(args.config)
+    wandb.init(project="exjobb", name=f"Benchmark {cfg.experiment_name}", config=cfg)
 
     if cfg.env_cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
@@ -87,6 +89,11 @@ def main():
                 print(f'Done sample [{i + 1:<3}/ {args.samples}], '
                       f'Inference time: {np.mean(inferece_time):.4f} ms +- {np.std(inferece_time):.4f} ms',
                       f'Energy consumption: {np.mean(total_energy_consumption):.4f} wh +- {np.std(total_energy_consumption):.4f} wh')
+                
+                wandb.log({"Inference_time": np.mean(inferece_time),
+                           "Inference_time_std": np.std(inferece_time),
+                           "Energy consumption": np.mean(total_energy_consumption),
+                           "Energy consumption_std": np.std(total_energy_consumption)})
 
     print('Final results',
             f'Done sample [{i + 1:<3}/ {args.samples}], '
