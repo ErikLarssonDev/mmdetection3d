@@ -9,7 +9,7 @@ _base_ = [
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
 auto_scale_lr = dict(enable=False, base_batch_size=1)
 
-experiment_name = 'dynamic_voxelization_20e'
+experiment_name = 'dynamic_voxelization_20e_b1_time_feature_minizod'
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
 
 work_dir = './work_dirs/' + experiment_name
