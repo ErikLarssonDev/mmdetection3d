@@ -11,9 +11,9 @@ import wandb
 
 currentmaxpoint = [0, 0, 0]
 currentminpoint = [100, 100, 100]
-NUM_FRAMES_BEFORE = 1
+NUM_FRAMES_BEFORE = 0
 NUM_FRAMES_AFTER = 0
-USE_FRAME_TIME_FEATURE = True # TODO: These hyper parameters should be saved with wandb
+USE_FRAME_TIME_FEATURE = False # TODO: These hyper parameters should be saved with wandb
 NUM_BEFORE_FRAMES_BOUNDS = [[0, 300], [50, 300], [100, 300]]
 
 
@@ -145,8 +145,6 @@ class ZodDatasetRestruct(Det3DDataset):
             if self.use_frame_time_feature:
                 new_points = torch.cat((new_points, torch.ones_like(new_points[:,0:1]) * -1* (frame_before_index+1)),1)
             example['inputs']['points'] = torch.cat((example['inputs']['points'], new_points),0) # Add points from future frames
-        
-        print(f"Number of points in example: {example['inputs']['points'].shape[0]}")
 
         if not self.test_mode and self.filter_empty_gt:
             # after pipeline drop the example with empty annotations

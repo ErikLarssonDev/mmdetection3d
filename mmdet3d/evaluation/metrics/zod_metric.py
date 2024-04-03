@@ -20,7 +20,7 @@ from mmdet3d.structures import (Box3DMode, CameraInstance3DBoxes,
 import wandb
 
 
-SAVE_PREDS_TO_FILE = False
+SAVE_PREDS_TO_FILE = True
 PREDS_SAVE_DIR = "/mmdetection3d/saved_preds"
 if SAVE_PREDS_TO_FILE:
     # Array on format [[[label, x, y, z, w, l, h, yaw]]]
