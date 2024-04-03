@@ -18,9 +18,30 @@ auto_scale_lr = dict(enable=False, base_batch_size=1)
 val_evaluator = dict(
     metric_save_dir='./work_dirs/' + experiment_name,
 )
-
+bonus_dataset_options = dict(
+    use_frame_time_feature=True,
+    frames_before=1,
+    frames_after=1,
+    num_previous_frames_on_main_path=1,
+    secondary_data_path='data/minizod/mini_zod',
+    filter_empty_gt=True
+)
 model = dict(
     voxel_encoder=dict(
         in_channels=5, # Change this when adding more point features
     )
+)
+
+train_dataloader = dict(
+    dataset=dict(
+        dataset = bonus_dataset_options
+    )
+)
+
+test_dataloader = dict(
+    dataset = bonus_dataset_options
+)
+
+val_dataloader = dict(
+    dataset = bonus_dataset_options
 )

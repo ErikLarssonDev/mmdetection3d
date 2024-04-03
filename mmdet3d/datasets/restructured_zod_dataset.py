@@ -11,14 +11,12 @@ import os
 
 currentmaxpoint = [0, 0, 0]
 currentminpoint = [100, 100, 100]
-NUM_FRAMES_BEFORE = 0
-NUM_FRAMES_AFTER = 0
-USE_FRAME_TIME_FEATURE = False # TODO: These hyper parameters should be saved with wandb
-NUM_BEFORE_FRAMES_BOUNDS = [[0, 300], [50, 300], [100, 300]]
-USE_FRAME_TIME_FEATURE = False # TODO: These hyper parameters should be saved with wandb
-NUM_BEFORE_FRAMES_BOUNDS = [[0, 300]]
-SECONDARY_DATA_PATH = '/media/erila/KINGSTON/minizod_mmdet3d/points' 
-NUM_PREVIOUS_FRAMES_ON_MAIN_PATH = 2 # Set this to how many frames are on the main dir.
+DEFAULT_NUM_FRAMES_BEFORE = 0
+DEFAULT_NUM_FRAMES_AFTER = 0
+DEFAULT_USE_FRAME_TIME_FEATURE = False # TODO: These hyper parameters should be saved with wandb
+DEFAULT_NUM_BEFORE_FRAMES_BOUNDS = []
+DEFAULT_SECONDARY_DATA_PATH = '/media/erila/KINGSTON/minizod_mmdet3d/points' 
+DEFAULT_NUM_PREVIOUS_FRAMES_ON_MAIN_PATH = 2 # Set this to how many frames are on the main dir.
 
 
 class_translation_map = { 
@@ -37,11 +35,12 @@ class_translation_map = {
 
 @DATASETS.register_module()
 class ZodDatasetRestruct(Det3DDataset):
-    def __init__(self, frames_before=NUM_FRAMES_BEFORE,
-                 frames_after=NUM_FRAMES_AFTER,
-                 use_frame_time_feature=USE_FRAME_TIME_FEATURE,
-                 secondary_data_path=SECONDARY_DATA_PATH,
-                 num_previous_frames_on_main_path=NUM_PREVIOUS_FRAMES_ON_MAIN_PATH,
+    def __init__(self, frames_before=DEFAULT_NUM_FRAMES_BEFORE,
+                 frames_after=DEFAULT_NUM_FRAMES_AFTER,
+                 use_frame_time_feature=DEFAULT_USE_FRAME_TIME_FEATURE,
+                 secondary_data_path=DEFAULT_SECONDARY_DATA_PATH,
+                 num_previous_frames_on_main_path=DEFAULT_NUM_PREVIOUS_FRAMES_ON_MAIN_PATH,
+                 num_before_frames_bounds=DEFAULT_NUM_BEFORE_FRAMES_BOUNDS,
                  *args,
                  **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,6 +49,13 @@ class ZodDatasetRestruct(Det3DDataset):
         self.use_frame_time_feature = use_frame_time_feature
         self.secondary_data_path = secondary_data_path
         self.num_previous_frames_on_main_path = num_previous_frames_on_main_path
+        self.num_before_frames_bounds = num_before_frames_bounds
+        print("Frames before: ", self.frames_before)
+        print("Frames after: ", self.frames_after)
+        print("Use frame time feature: ", self.use_frame_time_feature)
+        print("Secondary data path: ", self.secondary_data_path)
+        print("Num previous frames on main path: ", self.num_previous_frames_on_main_path)
+        print("Num before frames bounds: ", self.num_before_frames_bounds)
 
     METAINFO = {
         'classes': ['Vehicle', 'VulnerableVehicle', 'Pedestrian', 'Animal', 'StaticObject'],
@@ -144,7 +150,7 @@ class ZodDatasetRestruct(Det3DDataset):
             # RuntimeError: Sizes of tensors must match except in dimension 0. Expected size 5 but got size 4 for tensor number 1 in the list.
             
             
-        for frame_before_index, point_distance_interval in zip(range(self.frames_before), NUM_BEFORE_FRAMES_BOUNDS):
+        for frame_before_index, point_distance_interval in zip(range(self.frames_before), self.num_before_frames_bounds):
             if frame_before_index+1 > self.num_previous_frames_on_main_path:
                 input_dict['lidar_points']["lidar_path"] = os.path.join(self.secondary_data_path, os.path.basename(saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")))
             input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")
