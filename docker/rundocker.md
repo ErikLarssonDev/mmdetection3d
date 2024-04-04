@@ -28,6 +28,8 @@ python3 tools/create_data.py custom --root-path /media/erila/Passport/zod_mmdet3
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py
 
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/dynamic_voxelization_zod.py
+
+python3 tools/train.py tools/train.py configs/pointpillars/dynamic_voxelization_zod.py --resume-from <pth file>
 ```
 
 # Evaluate model example
@@ -42,5 +44,10 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fp
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dirs/{LOCATION_OF_MODEL}/{MODEL_NAME.py} work_dirs/{LOCATION_OF_MODEL}/epoch_X.pth
 
 python3 tools/analysis_tools/benchmark.py saved_models/dynamic_voxelization_20e/dynamic_voxelization_zod.py saved_models/dynamic_voxelization_20e/epoch_20.pth
-
 ```
+
+mmdet3d/datasets/restructured_zod_dataset.py
+You need to change the global variable "USE_POINT_TIME_FEATURE" to true in the dataset class
+
+configs/pointpillars/dynamic_voxelization_zod.py
+Change the in channels of the voxel encoder on your main config file to the total number of point features.

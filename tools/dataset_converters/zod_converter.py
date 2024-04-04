@@ -1,11 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from pathlib import Path
-
+from tqdm import tqdm
 import mmengine
 import numpy as np
 import os
 from .kitti_data_utils import  get_kitti_image_info
 from mmdet3d.structures.ops import box_np_ops
+from multiprocessing import Pool
 
 def _read_imageset_file(path):
     with open(path, 'r') as f:
@@ -45,7 +46,7 @@ def get_zod_image_info(path,
     """
     if not isinstance(image_ids, list):
         image_ids = list(range(image_ids))
-
+    pool = Pool(processes=8)
     def map_func(idx):
         info = {}
         pc_info = {'num_features': 4}
@@ -61,7 +62,8 @@ def get_zod_image_info(path,
         return info
 
 
-    image_infos = [map_func(im_id) for im_id in image_ids]
+    image_infos = [map_func(im_id) for im_id in tqdm(image_ids)]
+
 
     return list(image_infos)
 
