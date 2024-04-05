@@ -15,7 +15,7 @@ DEFAULT_NUM_FRAMES_BEFORE = 0
 DEFAULT_NUM_FRAMES_AFTER = 0
 DEFAULT_USE_FRAME_TIME_FEATURE = False # TODO: These hyper parameters should be saved with wandb
 DEFAULT_NUM_BEFORE_FRAMES_BOUNDS = []
-DEFAULT_SECONDARY_DATA_PATH = '/media/erila/KINGSTON/minizod_mmdet3d/points' 
+DEFAULT_SECONDARY_DATA_PATH = '/media/erila/KINGSTON/zod_mmdet3d/points' 
 DEFAULT_NUM_PREVIOUS_FRAMES_ON_MAIN_PATH = 2 # Set this to how many frames are on the main dir.
 
 
@@ -49,7 +49,7 @@ class ZodDatasetRestruct(Det3DDataset):
         self.use_frame_time_feature = use_frame_time_feature
         self.secondary_data_path = secondary_data_path
         self.num_previous_frames_on_main_path = num_previous_frames_on_main_path
-        self.num_before_frames_bounds = num_before_frames_bounds
+        self.num_before_frames_bounds = num_before_frames_bounds if num_before_frames_bounds != [] else [[0, 300]] * frames_before
         print("Frames before: ", self.frames_before)
         print("Frames after: ", self.frames_after)
         print("Use frame time feature: ", self.use_frame_time_feature)

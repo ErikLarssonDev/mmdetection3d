@@ -9,7 +9,7 @@ _base_ = [
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
 auto_scale_lr = dict(enable=False, base_batch_size=1)
 
-experiment_name = 'dynamic_voxelization_20e_b1_time_feature_minizod'
+experiment_name = 'dynamic_voxelization_20e_b2_time_feature'
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
 
 work_dir = './work_dirs/' + experiment_name
@@ -20,12 +20,14 @@ val_evaluator = dict(
 )
 bonus_dataset_options = dict(
     use_frame_time_feature=True,
-    frames_before=1,
-    frames_after=1,
-    num_previous_frames_on_main_path=1,
-    secondary_data_path='data/minizod/mini_zod',
-    filter_empty_gt=True
+    frames_before=2,
+    frames_after=0,
+    num_previous_frames_on_main_path=2,
+    secondary_data_path='/media/erila/KINGSTON/zod_mmdet3d/points',
+    filter_empty_gt=True,
+    num_before_frames_bounds=[] # Needs to have one list with a range for each frames before. If left empty you get all frames before for all ranges.
 )
+
 model = dict(
     voxel_encoder=dict(
         in_channels=5, # Change this when adding more point features
