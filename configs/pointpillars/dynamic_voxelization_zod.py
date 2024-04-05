@@ -30,7 +30,7 @@ bonus_dataset_options = dict(
 
 model = dict(
     voxel_encoder=dict(
-        in_channels=5, # Change this when adding more point features
+        in_channels=5 if bonus_dataset_options["use_frame_time_feature"] else 4, # Change this when adding more point features
     )
 )
 
