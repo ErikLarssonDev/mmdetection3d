@@ -20,7 +20,7 @@ from mmdet3d.structures import (Box3DMode, CameraInstance3DBoxes,
 import wandb
 
 
-SAVE_PREDS_TO_FILE = True
+SAVE_PREDS_TO_FILE = False
 PREDS_SAVE_DIR = "/mmdetection3d/saved_preds"
 if SAVE_PREDS_TO_FILE:
     # Array on format [[[label, x, y, z, w, l, h, yaw]]]
@@ -248,8 +248,9 @@ class ZodMetric(BaseMetric):
 
         if SAVE_PREDS_TO_FILE:
             # save preds to .npy file
-            preds_save_path = osp.join(PREDS_SAVE_DIR, "predictions.npy")
-            gts_save_path = osp.join(PREDS_SAVE_DIR, "ground_truths.npy")
+            os.makedirs(PREDS_SAVE_DIR, exist_ok=True)
+            preds_save_path = osp.join(PREDS_SAVE_DIR, "predictions")
+            gts_save_path = osp.join(PREDS_SAVE_DIR, "ground_truths")
             np.savez(gts_save_path, *gts_to_save)
             np.savez(preds_save_path, *preds_to_save)
 

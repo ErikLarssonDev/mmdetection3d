@@ -29,12 +29,12 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/pointp
 
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/train.py configs/pointpillars/dynamic_voxelization_zod.py
 
-python3 tools/train.py tools/train.py configs/pointpillars/dynamic_voxelization_zod.py --resume-from <pth file>
+python3 tools/train.py work_dirs/dynamic_voxelization_20e_b2_time_feature/dynamic_voxelization_zod.py --resume work_dirs/dynamic_voxelization_20e_b2_time_feature/epoch_1.pth
 ```
 
 # Evaluate model example
 ```shell
-PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/epoch_1.pth
+PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/dynamic_voxelization_20e_b2_time_feature/dynamic_voxelization_zod.py work_dirs/dynamic_voxelization_20e_b2_time_feature/epoch_1.pth
 
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/epoch_400.pth --show --show-dir show/
 ```
