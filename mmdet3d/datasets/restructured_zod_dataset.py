@@ -149,7 +149,9 @@ class ZodDatasetRestruct(Det3DDataset):
             example['inputs']['points'] = torch.cat((example['inputs']['points'], torch.zeros_like(example['inputs']['points'][:,0:1])),1)
             # RuntimeError: Sizes of tensors must match except in dimension 0. Expected size 5 but got size 4 for tensor number 1 in the list.
             
-            
+        if self.frames_before != len(self.num_before_frames_bounds):
+            raise Exception("Frames before does not match the number of bounds")
+        
         for frame_before_index, point_distance_interval in zip(range(self.frames_before), self.num_before_frames_bounds):
             if frame_before_index+1 > self.num_previous_frames_on_main_path:
                 input_dict['lidar_points']["lidar_path"] = os.path.join(self.secondary_data_path, os.path.basename(saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")))
