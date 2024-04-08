@@ -20,7 +20,7 @@ from mmdet3d.structures import (Box3DMode, CameraInstance3DBoxes,
 import wandb
 
 
-SAVE_PREDS_TO_FILE = False
+SAVE_PREDS_TO_FILE = True
 PREDS_SAVE_DIR = "/mmdetection3d/saved_preds"
 if SAVE_PREDS_TO_FILE:
     # Array on format [[[label, x, y, z, w, l, h, yaw]]]
@@ -181,7 +181,6 @@ class ZodMetric(BaseMetric):
             # Try to get gt_bboxes_labels, if it does not exist, get gt_labels_3d
             labels_3d = gt_annotation.get("gt_bboxes_labels")
 
-            
             gt_3d = dict(
                 labels_3d = labels_3d,
                 bboxes_3d = gt_annotation["gt_bboxes_3d"]
@@ -195,8 +194,8 @@ class ZodMetric(BaseMetric):
             
             if SAVE_PREDS_TO_FILE:
                 if gt_3d['labels_3d'] is not None:
-                    for cls, bboxes in zip(gt_3d['labels_3d'], gt_3d['bboxes_3d']):
-                        batch_gts.append(np.array([float(cls.item())] + bboxes.cpu().tolist()))
+                    for cls, bboxes, instance in zip(gt_3d['labels_3d'], gt_3d['bboxes_3d'], gt_annotation['instances']):
+                        batch_gts.append(np.array([float(cls.item())] + bboxes.cpu().tolist() + [instance["num_lidar_pts"]]))
                 else: 
                     print("Didnt get any gts for sample idx: ", result['sample_idx'] )
                     batch_gts.append(np.array([]))
