@@ -155,7 +155,8 @@ class ZodDatasetRestruct(Det3DDataset):
         for frame_before_index, point_distance_interval in zip(range(self.frames_before), self.num_before_frames_bounds):
             if frame_before_index+1 > self.num_previous_frames_on_main_path:
                 input_dict['lidar_points']["lidar_path"] = os.path.join(self.secondary_data_path, os.path.basename(saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")))
-            input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")
+            else:
+                input_dict['lidar_points']["lidar_path"] = saved_lidar_path.replace(".bin", f"_b{frame_before_index+1}.bin")
             new_points = self.filter_points_on_absolute_distance(self.pipeline(input_dict)['inputs']['points'], point_distance_interval[1], point_distance_interval[0])
             if self.use_frame_time_feature:
                 new_points = torch.cat((new_points, torch.ones_like(new_points[:,0:1]) * (frame_before_index+1)),1)

@@ -22,7 +22,7 @@ CLASS_NAME_TO_ID = {
 COLORS = np.array(((255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)))
 POINT_COLORS = np.array(((83, 86, 255), (55, 140, 231), (103, 198, 227), (223, 245, 255))) / 255
 point_colors_reversed = POINT_COLORS[::-1, :]
-NUM_PREVIOUS_FRAMES = 4
+NUM_PREVIOUS_FRAMES = 0
 FRAME_ID = '002522'
 
 def get_frame(frame_id):

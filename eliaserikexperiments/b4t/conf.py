@@ -1,7 +1,7 @@
 _base_ = [
-    '../_base_/models/pointpillars_dynamic_voxelization_250r.py',
-    '../_base_/datasets/zod_restruct.py',
-    '../_base_/schedules/schedule-2x.py', '../_base_/default_runtime.py'
+    '../../configs/_base_/models/pointpillars_dynamic_voxelization_250r.py',
+    '../../configs/_base_/datasets/zod_restruct.py',
+    '../../configs/_base_/schedules/schedule-2x.py', '../../configs/_base_/default_runtime.py'
 ]
 # Default setting for scaling LR automatically
 #   - `enable` means enable scaling LR automatically
@@ -9,9 +9,9 @@ _base_ = [
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
 auto_scale_lr = dict(enable=False, base_batch_size=1)
 
-experiment_name = 'dynamic_voxelization_20e'
+experiment_name = 'dynamic_voxelization_20e_b4T'
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
-data_path = "/home/erila/zod_mmdet3d/"
+data_path = "bigzod/"
 work_dir = './work_dirs/' + experiment_name
 
 auto_scale_lr = dict(enable=False, base_batch_size=1)
@@ -42,13 +42,9 @@ train_dataloader = dict(
 )
 
 test_dataloader = dict(
-    num_workers=1,
-    persistent_workers=False,
     dataset = bonus_dataset_options
 )
 
 val_dataloader = dict(
-    num_workers=1,
-    persistent_workers=False,
     dataset = bonus_dataset_options
 )

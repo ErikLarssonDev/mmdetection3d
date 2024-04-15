@@ -37,7 +37,10 @@ python3 tools/train.py work_dirs/dynamic_voxelization_20e_b2_time_feature/dynami
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py /home/erila/lidar-thesis/saved_models/dynamic_voxelization_20e/dynamic_voxelization_zod.py /home/erila/lidar-thesis/saved_models/dynamic_voxelization_20e/epoch_20.pth
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/epoch_400.pth --show --show-dir show/
 ```
-
+To evaluate model on a different computer with a different datapath, add the following argument (here bigzod/ is used as the datapath)
+```shell
+--cfg-options test_dataloader.dataset.data_root='bigzod/'
+```
 # Benchmark inference time example 
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dirs/{LOCATION_OF_MODEL}/{MODEL_NAME.py} work_dirs/{LOCATION_OF_MODEL}/epoch_X.pth
