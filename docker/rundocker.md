@@ -38,7 +38,10 @@ PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/dynamic_voxelizati
 
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/test.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200.py work_dirs/pointpillars_hv_fpn_sbn_8xb2_zod-3d-range200/epoch_400.pth --show --show-dir show/
 ```
-
+To evaluate model on a different computer with a different datapath, add the following argument (here bigzod/ is used as the datapath)
+```shell
+--cfg-options test_dataloader.dataset.data_root='bigzod/'
+```
 # Benchmark inference time example 
 ```shell
 PYTHONPATH=${PWD}:$PYTHONPATH python3 tools/analysis_tools/benchmark.py work_dirs/{LOCATION_OF_MODEL}/{MODEL_NAME.py} work_dirs/{LOCATION_OF_MODEL}/epoch_X.pth
