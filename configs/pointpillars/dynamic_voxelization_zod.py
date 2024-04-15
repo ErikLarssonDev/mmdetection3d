@@ -22,7 +22,7 @@ bonus_dataset_options = dict(
     use_frame_time_feature=False,
     frames_before=2,
     frames_after=0,
-    num_previous_frames_on_main_path=2,
+    num_previous_frames_on_main_path=4,
     secondary_data_path='/media/erila/KINGSTON/zod_mmdet3d/points',
     filter_empty_gt=True,
     num_before_frames_bounds=[], # Needs to have one list with a range for each frames before. If left empty you get all frames before for all ranges.
@@ -42,9 +42,13 @@ train_dataloader = dict(
 )
 
 test_dataloader = dict(
+    num_workers=1,
+    persistent_workers=False,
     dataset = bonus_dataset_options
 )
 
 val_dataloader = dict(
+    num_workers=1,
+    persistent_workers=False,
     dataset = bonus_dataset_options
 )

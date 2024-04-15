@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import time
+from tqdm import tqdm
 
 import torch
 from mmengine import Config
@@ -67,7 +68,7 @@ def main():
     inferece_time = []
     total_energy_consumption = []
     # benchmark with several samples and take the average
-    for i, data in enumerate(dataloader):
+    for i, data in tqdm(enumerate(dataloader)):
 
         torch.cuda.synchronize()
         tracker.start_task("Inference " + str(i))
@@ -85,10 +86,10 @@ def main():
             if (i + 1) % args.log_interval == 0:
                 fps = (i + 1 - num_warmup) / np.mean(inferece_time)
                 for task_name, task in tracker._tasks.items():
-                    total_energy_consumption.append(task.emissions_data.energy_consumed * 1000)
-                print(f'Done sample [{i + 1:<3}/ {args.samples}], '
-                      f'Inference time: {np.mean(inferece_time):.4f} ms +- {np.std(inferece_time):.4f} ms',
-                      f'Energy consumption: {np.mean(total_energy_consumption):.4f} wh +- {np.std(total_energy_consumption):.4f} wh')
+                    total_energy_consumption.append(task.emissions_data.energy_consumed * 1000) # task.emissions_data.energy_consumed is in kwh
+                # print(f'Done sample [{i + 1:<3}/ {args.samples}], '
+                #       f'Inference time: {np.mean(inferece_time):.4f} s +- {np.std(inferece_time):.4f} s',
+                #       f'Energy consumption: {np.mean(total_energy_consumption):.4f} wh +- {np.std(total_energy_consumption):.4f} wh')
                 
                 wandb.log({"Inference_time": np.mean(inferece_time),
                            "Inference_time_std": np.std(inferece_time),
@@ -97,7 +98,7 @@ def main():
 
     print('Final results',
             f'Done sample [{i + 1:<3}/ {args.samples}], '
-            f'Inference time: {np.mean(inferece_time):.4f} ms +- {np.std(inferece_time):.4f} ms',
+            f'Inference time: {np.mean(inferece_time):.4f} s +- {np.std(inferece_time):.4f} s',
             f'Energy consumption: {np.mean(total_energy_consumption):.4f} wh +- {np.std(total_energy_consumption):.4f} wh')
     # Finally, we use Torch utilities to clean up the workspace
     # torch._dynamo.reset()
