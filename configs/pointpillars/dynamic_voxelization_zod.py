@@ -11,7 +11,7 @@ auto_scale_lr = dict(enable=False, base_batch_size=1)
 
 experiment_name = 'dynamic_voxelization_20e'
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
-data_path = "bigzod/"
+data_path = "/home/erila/zod_mmdet3d/"
 work_dir = './work_dirs/' + experiment_name
 
 auto_scale_lr = dict(enable=False, base_batch_size=1)
@@ -19,8 +19,8 @@ val_evaluator = dict(
     metric_save_dir='./work_dirs/' + experiment_name,
 )
 bonus_dataset_options = dict(
-    use_frame_time_feature=False,
-    frames_before=0,
+    use_frame_time_feature=True,
+    frames_before=4,
     frames_after=0,
     num_previous_frames_on_main_path=2,
     secondary_data_path='/media/erila/KINGSTON/zod_mmdet3d/points',

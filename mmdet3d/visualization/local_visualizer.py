@@ -322,7 +322,7 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
             if self.pcd is not None and mode == 'xyz':
                 indices = box3d.get_point_indices_within_bounding_box(
                     self.pcd.points)
-                self.points_colors[indices] = np.array(bbox_color[i]) / 255.
+                self.points_colors[indices] = np.array(points_in_box_color) / 255.
 
         # update points colors
         if self.pcd is not None:
