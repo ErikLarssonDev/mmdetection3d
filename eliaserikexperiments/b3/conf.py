@@ -11,7 +11,7 @@ auto_scale_lr = dict(enable=False, base_batch_size=1)
 
 experiment_name = 'dynamic_voxelization_20e_b3'
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
-data_path = "minizod/"
+data_path = "bigzod/"
 work_dir = './work_dirs/' + experiment_name
 
 auto_scale_lr = dict(enable=False, base_batch_size=1)

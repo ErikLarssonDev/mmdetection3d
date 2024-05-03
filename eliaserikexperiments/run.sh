@@ -1,0 +1,2 @@
+python3 tools/analysis_tools/benchmark.py eliaserikexperiments/b4t/conf.py eliaserikexperiments/b4t/model.pth
+python3 tools/analysis_tools/benchmark.py eliaserikexperiments/ours/conf.py eliaserikexperiments/ours/model.pth

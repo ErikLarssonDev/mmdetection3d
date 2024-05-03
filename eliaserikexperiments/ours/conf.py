@@ -9,7 +9,7 @@ _base_ = [
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
 auto_scale_lr = dict(enable=False, base_batch_size=1)
 
-experiment_name = 'dynamic_voxelization_20e_b2T'
+experiment_name = 'dynamic_voxelization_20e_ours'
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
 data_path = "bigzod/"
 work_dir = './work_dirs/' + experiment_name
@@ -20,12 +20,17 @@ val_evaluator = dict(
 )
 bonus_dataset_options = dict(
     use_frame_time_feature=True,
-    frames_before=2,
+    frames_before=4,
     frames_after=0,
-    num_previous_frames_on_main_path=2,
+    num_previous_frames_on_main_path=4,
     secondary_data_path='/media/erila/KINGSTON/zod_mmdet3d/points',
     filter_empty_gt=True,
-    num_before_frames_bounds=[], # Needs to have one list with a range for each frames before. If left empty you get all frames before for all ranges.
+    num_before_frames_bounds=[
+        [95,  300],
+        [95,  300],
+        [95,  300],
+        [180, 300]
+    ], # Needs to have one list with a range for each frames before. If left empty you get all frames before for all ranges.
     data_root=data_path,
 )
 
